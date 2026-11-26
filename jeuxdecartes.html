@@ -82,6 +82,37 @@
         background: rgba(0,0,0,0.28); border-radius: 12px; padding: 4px 8px 6px; min-width: 60px; z-index: 4;
     }
     #trump-badge[hidden] { display: none; }
+    /* Points de la donne en cours (en haut à droite de la table) */
+    #hand-pts {
+        position: absolute; right: 8px; top: 8px; background: rgba(0,0,0,0.28); border-radius: 12px;
+        padding: 4px 7px 6px; min-width: 76px; max-width: 104px; z-index: 4; font-size: 12px; cursor: pointer;
+    }
+    #hand-pts[hidden] { display: none; }
+    #hand-pts .lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; text-align: center; margin-bottom: 2px; }
+    #hand-pts .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+    #hand-pts .row b { font-size: 17px; }
+    #hand-pts .row.tk span::after { content: ' ●'; color: #ffd54f; font-size: 9px; }
+    #hand-pts .det { font-size: 9.5px; opacity: 0.85; text-align: right; margin-top: -2px; line-height: 1.25; white-space: nowrap; }
+    #hand-pts .goal { font-size: 10px; border-top: 1px solid rgba(255,255,255,0.25); margin-top: 3px; padding-top: 2px; text-align: center; line-height: 1.3; }
+    #scorebar .sc { cursor: pointer; }
+    /* Menu, feuille de marque, écran « Quitter » */
+    .menu-list { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 2px; }
+    .menu-list button { text-align: left; padding: 10px 12px; border-radius: 10px; border: 1px solid #cfd8d2; background: #f3f7f4; font-size: 15px; font-weight: 600; color: #0b5d2b; }
+    .menu-list button small { display: block; font-weight: 400; color: #555; font-size: 12px; }
+    .menu-list button.quit { color: #b71c1c; }
+    table.sheet { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.sheet th, table.sheet td { padding: 3px 4px; border-bottom: 1px solid #e3e3e3; text-align: right; }
+    table.sheet td:nth-child(2), table.sheet th:nth-child(2) { text-align: left; }
+    table.sheet td small { color: #777; }
+    table.sheet tr.lv td { background: #eef5f0; font-weight: 700; text-align: left; color: #0b5d2b; }
+    table.sheet tr.end td { font-weight: 700; text-align: left; color: #333; }
+    #quit {
+        position: fixed; inset: 0; z-index: 90; background: radial-gradient(circle at 50% 30%, #13803d, #08431f);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 20px; text-align: center;
+    }
+    #quit[hidden] { display: none; }
+    #quit h1 { margin: 0; font-size: 32px; }
+    #quit p { max-width: 380px; line-height: 1.45; }
     #trump-badge .lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
     #trump-badge .sym {
         width: 46px; height: 46px; border-radius: 50%; background: #fff; display: flex; align-items: center;
@@ -239,12 +270,41 @@
         :root { --cw: 48px; --ch: 70px; --mw: 26px; --mh: 37px; --tw: 44px; --th: 64px; }
         header .title { display: none; }
     }
+
+    /* ===================== SOLITAIRE ===================== */
+    #sol { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: #0b5d2b; max-width: 900px; margin: 0 auto; }
+    #sol[hidden] { display: none; }
+    #sol-board { flex: 1; position: relative; touch-action: none; min-height: 0; overflow: hidden; }
+    .scard { position: absolute; width: var(--scw); height: var(--sch); --w: var(--scw); border-radius: calc(var(--scw) * 0.11);
+             transition: left 0.18s, top 0.18s; cursor: pointer; }
+    .scard .rk { top: 2px; left: 3px; font-size: calc(var(--scw) * 0.29); white-space: nowrap; line-height: 1; }
+    .scard .rk span { display: inline; margin-left: 1px; font-size: 0.92em; }
+    .scard .mid { top: 62%; font-size: calc(var(--scw) * 0.52); }
+    .scard.down { background: repeating-linear-gradient(45deg, #1565c0 0 4px, #1e88e5 4px 8px); border: 2px solid #fff; }
+    .scard.down > * { display: none; }
+    .scard.under { box-shadow: none; }
+    .scard.drag { transition: none; box-shadow: 0 8px 18px rgba(0,0,0,0.55); }
+    .scard.hint { box-shadow: 0 0 0 3px #ffd54f, 0 2px 8px rgba(0,0,0,0.5); }
+    .scard.shake { animation: sshake 0.32s; }
+    @keyframes sshake { 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+    .sslot { position: absolute; width: var(--scw); height: var(--sch); box-sizing: border-box; border: 2px dashed rgba(255,255,255,0.3);
+             border-radius: calc(var(--scw) * 0.11); display: flex; align-items: center; justify-content: center;
+             color: rgba(255,255,255,0.45); font-size: calc(var(--scw) * 0.42); font-weight: 800; }
+    .sslot.stock { cursor: pointer; }
+    .sslot.hint { border-color: #ffd54f; border-style: solid; color: #ffd54f; }
+    #sol-foot { flex-shrink: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 4px 10px 8px; }
+    #sol-msg { flex: 1; font-size: 14px; line-height: 1.3; text-align: center; }
+    #sol-msg.err { color: #ffe082; }
+    #sol-finish { background: #ffd54f; color: #222; border: none; border-radius: 10px; padding: 9px 14px; font-weight: 800; font-size: 15px; }
+    #sol-finish[hidden] { display: none; }
+    .top-btn:disabled { opacity: 0.4; }
+    #sol-board.noanim .scard { transition: none; }
 </style>
 </head>
 <body>
 <div id="app">
     <header>
-        <button class="top-btn" id="btn-menu" title="Menu (choix du jeu)">☰</button>
+        <button class="top-btn" id="btn-menu" title="Menu : feuille de marque, écran de départ, quitter">☰</button>
         <span class="title" id="game-title">Belote</span>
         <div id="scorebar"></div>
         <button class="top-btn" id="btn-tricks" title="Plis de la donne">Plis</button>
@@ -253,6 +313,7 @@
     </header>
     <main id="table">
         <div id="trump-badge" hidden><span class="lbl">Atout</span><span class="sym" id="trump-sym"></span><span class="who" id="trump-who"></span></div>
+        <div id="hand-pts" hidden title="Points de la donne (toucher : feuille de marque)"></div>
         <div class="seat seat-left" id="seat-3"></div>
         <div class="seat seat-top" id="seat-2"></div>
         <div class="seat seat-right" id="seat-1"></div>
@@ -278,30 +339,57 @@
     <div class="games">
         <button class="game-card" data-game="classique"><b>Belote classique</b>Une carte est retournée : on prend à sa couleur ou on passe, puis 2e tour.</button>
         <button class="game-card" data-game="coinche"><b>Belote coinchée</b>Enchères de 80 à 160 ou capot, sans atout et tout atout, coinche et surcoinche.</button>
+        <button class="game-card" data-game="solitaire"><b>Solitaire</b>La réussite classique : 7 colonnes, monter les 4 couleurs de l'As au Roi.</button>
     </div>
     <div class="opt-block" id="sata-block">
         <div class="seg-title">Coinche : valeurs Sans atout / Tout atout</div>
         <div class="seg"><button data-sata="officiel">Officielle</button><button data-sata="mixte">SA off. · TA 258</button><button data-sata="belote">Valeurs belote</button></div>
         <div class="vals" id="sata-vals"></div>
     </div>
-    <div class="opt-block">
+    <div class="opt-block" id="sol-block">
+        <div class="seg-title">Solitaire : pioche</div>
+        <div class="seg"><button data-draw="1">1 carte à la fois</button><button data-draw="3">3 cartes à la fois</button></div>
+        <div class="vals" id="sol-vals"></div>
+    </div>
+    <div class="opt-block" id="ann-block">
         <div class="seg-title">Annonces</div>
         <div class="seg"><button data-ann="0">Sans annonces</button><button data-ann="1">Avec annonces</button></div>
         <div class="vals" id="ann-vals"></div>
     </div>
-    <div class="goals"><span>Partie en</span>
+    <div class="goals" id="goals-block"><span>Partie en</span>
         <button class="goal-btn" data-goal="1000">1000</button><button class="goal-btn" data-goal="1500">1500</button><button class="goal-btn" data-goal="2000">2000</button>
     </div>
     <button class="start-btn" id="btn-start">Jouer</button>
     <button class="resume-btn" id="btn-resume" hidden></button>
-    <p class="hint-txt">Joueurs (humain ou ordinateur), cartes visibles, vitesse : bouton ⚙ pendant la partie. Règles : bouton ?.</p>
+    <button class="resume-btn" id="btn-quit-start">Quitter</button>
+    <p class="hint-txt">Pendant la partie : ☰ pour la feuille de marque ou pour quitter, ⚙ pour les joueurs et la vitesse, ? pour les règles.</p>
+    <p class="hint-txt" id="version-txt"></p>
 </div></div>
+<div id="sol" hidden>
+    <header>
+        <button class="top-btn" id="sol-menu" title="Menu">☰</button>
+        <span class="title">Solitaire</span>
+        <div id="sol-stats" style="flex:1;display:flex;gap:6px;flex-wrap:wrap;min-width:0"></div>
+        <button class="top-btn" id="sol-undo" title="Annuler le dernier coup">↶</button>
+        <button class="top-btn" id="sol-hint" title="Indice">💡</button>
+        <button class="top-btn" id="sol-rules" title="Règles">?</button>
+    </header>
+    <div id="sol-board"></div>
+    <div id="sol-foot"><div id="sol-msg"></div><button id="sol-finish" hidden>Terminer ▸</button></div>
+</div>
+<div id="quit" hidden>
+    <h1>À bientôt !</h1>
+    <div class="suits" style="font-size:26px;letter-spacing:6px"><span style="color:#ff6b6b">♥</span>♠<span style="color:#ff6b6b">♦</span>♣</div>
+    <p id="quit-txt"></p>
+    <button class="start-btn" id="btn-reopen">Revenir au jeu</button>
+</div>
 <div class="overlay" id="overlay" hidden><div class="box" id="box"></div></div>
 <!-- Fenêtres d'information (plis, règles, options) : au-dessus, sans bloquer la partie -->
 <div class="overlay" id="overlay2" hidden style="z-index:60"><div class="box" id="box2"></div></div>
 
 <script>
 'use strict';
+const VERSION = '2.0';            // à reporter dans jeuxdecartes-todo.md à chaque livraison
 /* =====================================================================
    BELOTE — d'après l'ancien programme Turbo Pascal BELOTE.PAS
    Joueurs 1 à 4 (internes 0 à 3), équipes 1/3 et 2/4, jeu dans le sens
@@ -327,7 +415,7 @@ const VARIANTS = {
 };
 const DEFAULT_RULES = { saTa: 'officiel', annonces: false, annoncesContrat: true };
 const TEAM = ['1/3', '2/4'];
-const GAME_NAME = { classique: 'Belote classique', coinche: 'Belote coinchée' };
+const GAME_NAME = { classique: 'Belote classique', coinche: 'Belote coinchée', solitaire: 'Solitaire' };
 
 const makeDeck = () => SUITS.flatMap(s => RANKS.map(r => ({ s, r, id: r + s })));
 const next = p => (p + 1) % 4;
@@ -356,7 +444,8 @@ const DEFAULT_OPTIONS = {
 const SPEED = { lente: 1100, normale: 650, rapide: 250 };
 const TEST = window.BELOTE_TEST || null;     // utilisé par les tests automatiques
 const ms = v => (TEST && !TEST.realtime ? 0 : v);
-const sleep = v => new Promise(r => setTimeout(r, ms(v)));
+let HALTED = false;                // après « Quitter » : le jeu s'arrête net
+const sleep = v => new Promise(r => setTimeout(() => { if (!HALTED) r(); }, ms(v)));
 const hook = (name, ...args) => { if (TEST && typeof TEST[name] === 'function') TEST[name](...args); };   // tests uniquement
 
 function loadJSON(key, fallback) {
@@ -384,6 +473,7 @@ const G = {
     contract: null,                  // coinche : { value, capot, type, suit, coinche, by }
     rules: Object.assign({}, DEFAULT_RULES),   // valeurs SA/TA et annonces choisies au départ
     annonces: null,                  // annonces de la donne (si elles sont jouées)
+    history: [],                     // feuille de marque : une ligne par donne jouée
 };
 const saved = loadJSON('belote_match', null);
 if (saved && Array.isArray(saved.scores)) Object.assign(G, saved, { firstHand: true });
@@ -392,6 +482,7 @@ function saveMatch() {
     saveJSON('belote_match', {
         scores: G.scores, pat: G.pat, level: G.level, firstWinner: G.firstWinner,
         dealer: G.dealer, lastWinnerTeam: G.lastWinnerTeam, game: G.game, goal: G.goal, rules: G.rules,
+        history: G.history,
     });
 }
 
@@ -979,6 +1070,26 @@ function render() {
     if (G.pat) sb += `<span class="chip">Litige : ${G.pat}</span>`;
     $('scorebar').innerHTML = sb;
 
+    // Points de la donne en cours, mis à jour à chaque pli
+    const hp = $('hand-pts');
+    hp.hidden = !((G.phase === 'play' || G.phase === 'result') && G.taker !== null);
+    if (!hp.hidden) {
+        const bel = [0, 0];
+        if (G.belote.holder !== null && G.belote.count >= 2) bel[team(G.belote.holder)] = 20;   // belote + rebelote dites
+        const ann = G.annonces && G.tricks.length ? G.annonces.points : [0, 0];               // annonces : après le 1er pli
+        const T = team(G.taker);
+        const rest = handTotal() - G.cardPts[0] - G.cardPts[1];
+        let h = '<div class="lbl">Points</div>';
+        for (const t of [0, 1]) {
+            const det = [bel[t] ? 'dont belote' : '', ann[t] ? 'dont annonces ' + ann[t] : ''].filter(Boolean).join('<br>');
+            h += `<div class="row t${t}${t === T ? ' tk' : ''}"><span>${TEAM[t]}</span><b>${G.cardPts[t] + bel[t] + ann[t]}</b></div>` +
+                 (det ? `<div class="det">${det}</div>` : '');
+        }
+        h += `<div class="goal">${rest > 0 ? `reste ${rest}` : 'donne finie'}` +
+             (G.contract ? `<br>contrat ${valueTxt(G.contract)}` : '') + '</div>';
+        hp.innerHTML = h;
+    }
+
     // Pastille d'atout sur la table
     $('game-title').textContent = G.game === 'coinche' ? 'Coinche' : 'Belote';
     const tb = $('trump-badge');
@@ -1522,6 +1633,7 @@ async function playHand() {
     render();
     await playTricks();
     const res = G.game === 'coinche' ? scoreCoinche() : scoreHand();
+    addHistory(res);
     hook('onHand', res, G);
     G.phase = 'result';
     render();
@@ -1549,8 +1661,9 @@ async function endOfGame(w) {
     } else {
         again = await modal(`<h3>Belle terminée</h3><p>${tn} remporte la belle (${sc}) !</p>`, [{ label: 'Nouvelle partie', value: 1 }]);
     }
+    G.history.push({ end: true, level: G.level, winner: w, scores: G.scores.slice() });
     G.level = again;
-    if (again === 1) G.firstWinner = null;
+    if (again === 1) { G.firstWinner = null; G.history = []; }
     G.scores = [0, 0];
     G.pat = 0;
     saveMatch();
@@ -1561,12 +1674,79 @@ async function main() {
     defaultViewer();
     render();
     for (;;) {
-        await playHand();
-        saveMatch();
-        const w = matchWinner();
+        let w = matchWinner();
+        if (w === null) { await playHand(); saveMatch(); w = matchWinner(); }
         if (w !== null) await endOfGame(w);
         if (TEST && TEST.stop && TEST.stop()) return;
     }
+}
+
+// --- Feuille de marque, menu, quitter ---
+let menuChoice = null;
+const VERDICT_TXT = { ok: 'réussi', dedans: 'dedans', litige: 'litige', capot: 'capot', 'capot-def': 'capot (défense)',
+                      chute: 'chuté', 'capot-annonce': 'capot réussi', 'capot-chute': 'capot chuté' };
+function addHistory(res) {
+    const c = G.contract;
+    const what = c ? `${valueTxt(c)} ${contractShort(c)}${c.coinche > 1 ? ' ×' + c.coinche : ''}` : SYM[G.trump];
+    G.history.push({ level: G.level, what, red: c ? (c.type === 'suit' && RED[c.suit]) : RED[G.trump], taker: G.taker,
+                     verdict: VERDICT_TXT[res.verdict] || res.verdict, gain: res.gain.slice(), scores: G.scores.slice() });
+}
+
+function showScoreSheet() {
+    const LV = ['Partie', 'Revanche', 'Belle'];
+    let rows = '', lastLv = 0, n = 0;
+    for (const e of G.history) {
+        if (e.level !== lastLv) { rows += `<tr class="lv"><td colspan="4">${LV[e.level - 1]} en ${G.goal}</td></tr>`; lastLv = e.level; n = 0; }
+        if (e.end) { rows += `<tr class="end"><td colspan="4">→ L'équipe ${TEAM[e.winner]} gagne (${e.scores[0]} – ${e.scores[1]})</td></tr>`; continue; }
+        n++;
+        const g = t => `${e.gain[t] ? '+' + e.gain[t] : '–'}<br><small>${e.scores[t]}</small>`;
+        rows += `<tr><td>${n}</td><td><span style="color:${e.red ? '#c62828' : 'inherit'}">${e.what}</span> J${e.taker + 1}<br><small>${e.verdict}</small></td><td class="t0">${g(0)}</td><td class="t1">${g(1)}</td></tr>`;
+    }
+    const html = `<h3>Feuille de marque</h3>` + (rows
+        ? `<table class="sheet"><tr><th>#</th><th>Contrat</th><th class="t0">1/3</th><th class="t1">2/4</th></tr>${rows}</table>
+           <p style="font-size:12px;color:#666">Pour chaque donne : points marqués, et en petit le score cumulé.</p>`
+        : '<p>Aucune donne terminée pour l\'instant.</p>') +
+        (G.pat ? `<p>Litige en réserve : ${G.pat} points.</p>` : '');
+    modal(html, [{ label: 'Fermer', value: 1 }], 2);
+}
+
+async function showMenu() {
+    const inHand = G.phase === 'deal' || G.phase === 'bid' || G.phase === 'play';
+    const warn = inHand ? '<small>La donne en cours ne sera pas comptée.</small>' : '<small>Le score est conservé.</small>';
+    menuChoice = null;
+    const v0 = await modal(`<h3>Menu <small style="font-size:12px;color:#777;font-weight:400">version ${VERSION}</small></h3><div class="menu-list">
+        <button data-v="sheet">📋 Feuille de marque<small>Points de chaque donne et score cumulé</small></button>
+        <button data-v="home">🏠 Écran de départ${warn}</button>
+        <button data-v="quit" class="quit">⏻ Quitter${warn}</button></div>`,
+        [{ label: 'Continuer la partie', value: 'back' }], 2);
+    const v = menuChoice || v0;
+    menuChoice = null;
+    if (v === 'sheet') showScoreSheet();
+    else if (v === 'home') { if (G.phase === 'result') saveMatch(); location.reload(); }
+    else if (v === 'quit') quitGame(true);
+}
+// Les boutons de la liste du menu ferment la fenêtre avec leur choix
+document.addEventListener('click', e => {
+    const b = e.target.closest('.menu-list button');
+    if (!b) return;
+    menuChoice = b.dataset.v;
+    $('box2').querySelector('.btns button').click();   // ferme la fenêtre ; showMenu lit menuChoice
+});
+
+// Quitter : on enregistre, on arrête le jeu, et on ferme la page si le navigateur l'accepte
+function quitGame(fromGame) {
+    if (fromGame && G.phase === 'result') saveMatch();            // donne terminée : elle compte
+    HALTED = true;
+    $('overlay').hidden = true; $('overlay2').hidden = true; $('start').hidden = true;
+    if (SOL.active) solSave();
+    const sv = loadJSON('belote_match', null), ss = loadJSON('solitaire_game', null), lines = [];
+    if ((!SOL.active || !fromGame) && sv && (sv.scores[0] || sv.scores[1] || sv.level > 1))
+        lines.push(`Partie enregistrée : ${GAME_NAME[sv.game] || ''}, 1/3 <b>${sv.scores[0]}</b> – 2/4 <b>${sv.scores[1]}</b>.`);
+    if ((SOL.active || !fromGame) && ss && ss.started && !ss.won)
+        lines.push(`Réussite enregistrée : pioche ${ss.draw}, <b>${coups(ss.moves)}</b>, ${fmtTime(ss.elapsed || 0)}.`);
+    $('quit-txt').innerHTML = (lines.length ? lines.join('<br>') + '<br>Tu la retrouveras avec le bouton «&nbsp;Reprendre&nbsp;».<br><br>' : '') + 'Tu peux fermer cette page.';
+    $('quit').hidden = false;
+    try { window.close(); } catch (e) { /* le navigateur refuse : l'écran « À bientôt » reste affiché */ }
 }
 
 // --- Fenêtres : plis, règles, options ---
@@ -1662,9 +1842,11 @@ $('hand').addEventListener('click', onHandClick);
 $('btn-tricks').addEventListener('click', showTricks);
 $('btn-rules').addEventListener('click', showRules);
 $('btn-options').addEventListener('click', showOptions);
-$('btn-menu').addEventListener('click', () => {
-    if (confirm('Revenir au menu ? La donne en cours sera perdue, mais le score est conservé (bouton « Reprendre »).')) location.reload();
-});
+$('btn-menu').addEventListener('click', showMenu);
+$('hand-pts').addEventListener('click', showScoreSheet);
+$('scorebar').addEventListener('click', e => { if (e.target.closest('.sc')) showScoreSheet(); });
+$('btn-quit-start').addEventListener('click', () => quitGame(false));
+$('btn-reopen').addEventListener('click', () => location.reload());
 
 // Accès pour les tests automatiques
 window.belote = { G, askCoincheAction, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT,
@@ -1673,7 +1855,7 @@ window.belote = { G, askCoincheAction, legalCards, explainIllegal, aiCard, aiBid
 // ---------------- Écran de départ ----------------
 function resetMatch(game, goal, rules) {
     Object.assign(G, { scores: [0, 0], pat: 0, level: 1, firstWinner: null, dealer: 2, lastWinnerTeam: null,
-                       firstHand: true, deck: makeDeck(), game, goal, rules: Object.assign({}, DEFAULT_RULES, rules || {}) });
+                       firstHand: true, deck: makeDeck(), game, goal, rules: Object.assign({}, DEFAULT_RULES, rules || {}), history: [] });
 }
 
 const RNAME = { A: 'As', '10': '10', R: 'Roi', D: 'Dame', V: 'Valet', '9': '9', '8': '8', '7': '7' };
@@ -1705,12 +1887,18 @@ function annHTML(rules, game, withCheckbox) {
 }
 
 function showStart() {
+    $('version-txt').textContent = 'Version ' + VERSION;
     const st = $('start');
     const sv = loadJSON('belote_match', null);
     let game = OPT.game in GAME_NAME ? OPT.game : 'classique';
     const goals = Object.assign({ classique: 1000, coinche: 1500 }, OPT.goals || {});
     let goal = goals[game];
     const rules = Object.assign({}, DEFAULT_RULES, OPT.rules || {});
+    let draw = OPT.solDraw === 3 ? 3 : 1;
+    const solSv = loadJSON('solitaire_game', null);
+    const resume = $('btn-resume');
+    const beloteResume = sv && Array.isArray(sv.scores) && (sv.scores[0] || sv.scores[1] || sv.level > 1)
+        ? `Reprendre : ${GAME_NAME[sv.game] || GAME_NAME.classique}${sv.rules && sv.rules.annonces ? ' avec annonces' : ''} · 1/3 ${sv.scores[0]} – 2/4 ${sv.scores[1]}` : '';
     const refresh = () => {
         st.querySelectorAll('.game-card').forEach(b => b.classList.toggle('sel', b.dataset.game === game));
         st.querySelectorAll('.goal-btn').forEach(b => b.classList.toggle('sel', +b.dataset.goal === goal));
@@ -1719,19 +1907,41 @@ function showStart() {
         $('sata-vals').innerHTML = sataHTML(rules.saTa);
         st.querySelectorAll('[data-ann]').forEach(b => b.classList.toggle('sel', (b.dataset.ann === '1') === rules.annonces));
         $('ann-vals').innerHTML = annHTML(rules, game, true);
+        const so = game === 'solitaire';
+        $('ann-block').hidden = so; $('goals-block').style.display = so ? 'none' : ''; $('sol-block').hidden = !so;
+        st.querySelectorAll('[data-draw]').forEach(b => b.classList.toggle('sel', +b.dataset.draw === draw));
+        const ss = solStats()[draw];
+        $('sol-vals').innerHTML = (draw === 1 ? 'On retourne les cartes de la pioche une par une : la réussite sort plus souvent.'
+            : 'On retourne 3 cartes à la fois et seule celle du dessus se joue : plus difficile.') +
+            ' Passages dans la pioche illimités.' + (ss.played ? `<br><b>Tes parties</b> : ${ss.won} gagnée${ss.won > 1 ? 's' : ''} sur ${ss.played}${ss.best ? ' · meilleur temps ' + fmtTime(ss.best) : ''}` : '');
+        // bouton « Reprendre » : la partie de belote ou la réussite en cours
+        if (so) {
+            resume.hidden = !(solSv && solSv.started && !solSv.won);
+            if (!resume.hidden) resume.textContent = `Reprendre la réussite · pioche ${solSv.draw} · ${coups(solSv.moves)} · ${fmtTime(solSv.elapsed || 0)}`;
+        } else {
+            resume.hidden = !beloteResume;
+            if (beloteResume) resume.textContent = beloteResume;
+        }
     };
     st.querySelectorAll('.game-card').forEach(b => b.addEventListener('click', () => { game = b.dataset.game; goal = goals[game]; refresh(); }));
     st.querySelectorAll('.goal-btn').forEach(b => b.addEventListener('click', () => { goal = +b.dataset.goal; goals[game] = goal; refresh(); }));
     st.querySelectorAll('[data-sata]').forEach(b => b.addEventListener('click', () => { rules.saTa = b.dataset.sata; refresh(); }));
     st.querySelectorAll('[data-ann]').forEach(b => b.addEventListener('click', () => { rules.annonces = b.dataset.ann === '1'; refresh(); }));
     $('ann-vals').addEventListener('change', e => { if (e.target.id === 'ann-contrat') rules.annoncesContrat = e.target.checked; });
-    const resume = $('btn-resume');
-    if (sv && Array.isArray(sv.scores) && (sv.scores[0] || sv.scores[1] || sv.level > 1)) {
-        resume.hidden = false;
-        resume.textContent = `Reprendre : ${GAME_NAME[sv.game] || GAME_NAME.classique}${sv.rules && sv.rules.annonces ? ' avec annonces' : ''} · 1/3 ${sv.scores[0]} – 2/4 ${sv.scores[1]}`;
-        resume.addEventListener('click', () => { st.hidden = true; main(); });
-    }
+    st.querySelectorAll('[data-draw]').forEach(b => b.addEventListener('click', () => { draw = +b.dataset.draw; refresh(); }));
+    resume.addEventListener('click', () => {
+        st.hidden = true;
+        if (game === 'solitaire') { OPT = Object.assign({}, OPT, { game }); saveJSON('belote_options', OPT); solStart({ resume: true }); }
+        else main();
+    });
     $('btn-start').addEventListener('click', () => {
+        if (game === 'solitaire') {
+            OPT = Object.assign({}, OPT, { game, solDraw: draw });
+            saveJSON('belote_options', OPT);
+            st.hidden = true;
+            solStart({ draw });
+            return;
+        }
         OPT = Object.assign({}, OPT, { game, goals, rules: Object.assign({}, rules) });
         saveJSON('belote_options', OPT);
         resetMatch(game, goal, rules);
@@ -1743,7 +1953,450 @@ function showStart() {
     st.hidden = false;
 }
 
-if (TEST && !TEST.showStart) {      // tests automatiques : pas d'écran de départ
+// =====================================================================
+// SOLITAIRE (Klondike) : 7 colonnes, monter les 4 couleurs de l'As au Roi
+// =====================================================================
+const SRANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'V', 'D', 'R'];
+const SRNAME = { A: 'As', V: 'Valet', D: 'Dame', R: 'Roi' };
+const sval = c => SRANKS.indexOf(c.r) + 1;
+const srname = v => SRNAME[SRANKS[v - 1]] || SRANKS[v - 1];
+const SUITNAME = { H: 'cœur', S: 'pique', D: 'carreau', C: 'trèfle' };
+const isRed = c => c.s === 'H' || c.s === 'D';
+const SOL = {
+    active: false, draw: 1, stock: [], waste: [], found: [[], [], [], []], tab: [[], [], [], [], [], [], []],
+    moves: 0, elapsed: 0, started: false, won: false, undo: [], initial: null, els: {}, slots: {}, busy: false,
+};
+let L = null;   // dimensions de la table
+
+function solWait(t) { return new Promise(r => setTimeout(() => { if (!HALTED) r(); }, TEST && !TEST.realtime ? 0 : t)); }
+function solRng(seed) {                     // générateur reproductible (tests)
+    let a = seed >>> 0;
+    return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+}
+
+// --- Règles ---
+function canFound(cards, f) {
+    if (cards.length !== 1) return { ok: false, why: 'On monte les cartes sur les fondations une par une.' };
+    const c = cards[0], top = f[f.length - 1];
+    if (!top) return c.r === 'A' ? { ok: true } : { ok: false, why: `Une fondation commence toujours par un As (pas par ${cname(c)}).` };
+    if (top.s !== c.s) return { ok: false, why: `Sur la fondation ${cname(top)}, on ne met que du ${SUITNAME[top.s]}.` };
+    if (sval(c) !== sval(top) + 1) return { ok: false, why: `Sur ${cname(top)}, il faut le ${srname(sval(top) + 1)} de ${SUITNAME[top.s]} : les fondations montent dans l'ordre.` };
+    return { ok: true };
+}
+function canTab(cards, col) {
+    const c = cards[0], top = col[col.length - 1];
+    if (!top) return c.r === 'R' ? { ok: true } : { ok: false, why: `Seul un Roi (ou une suite qui commence par un Roi) peut aller sur une colonne vide.` };
+    if (!top.up) return { ok: false, why: 'Impossible sur une carte cachée.' };
+    if (isRed(c) === isRed(top)) return { ok: false, why: `${cname(c)} ne va pas sur ${cname(top)} : il faut alterner rouge et noir.` };
+    if (sval(c) !== sval(top) - 1) return { ok: false, why: `${cname(c)} ne va pas sur ${cname(top)} : il faut une carte juste en dessous (un ${srname(sval(top) - 1)} ${isRed(top) ? 'noir' : 'rouge'}).` };
+    return { ok: true };
+}
+const canDrop = (cards, dst) => (dst.to === 'found' ? canFound(cards, SOL.found[dst.i]) : canTab(cards, SOL.tab[dst.i]));
+
+function solCards(src) {
+    if (src.from === 'waste') return SOL.waste.slice(-1);
+    if (src.from === 'found') return SOL.found[src.i].slice(-1);
+    return SOL.tab[src.i].slice(src.k);
+}
+const sameSpot = (src, dst) => (src.from === 'found' && dst.to === 'found' && src.i === dst.i) || (src.from === 'tab' && dst.to === 'tab' && src.i === dst.i);
+
+// --- Donne ---
+function solNewDeal(seed) {
+    const rnd = seed !== undefined ? solRng(seed) : Math.random;
+    const deck = [];
+    for (const s of SUITS) for (const r of SRANKS) deck.push({ r, s, id: r + s, up: false });
+    for (let i = deck.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [deck[i], deck[j]] = [deck[j], deck[i]]; }
+    SOL.tab = [[], [], [], [], [], [], []];
+    for (let i = 0; i < 7; i++) for (let j = i; j < 7; j++) SOL.tab[j].push(deck.pop());
+    SOL.tab.forEach(col => { col[col.length - 1].up = true; });
+    SOL.stock = deck; SOL.waste = []; SOL.found = [[], [], [], []];
+    SOL.moves = 0; SOL.elapsed = 0; SOL.started = false; SOL.won = false; SOL.undo = [];
+    SOL.initial = solSnap();
+}
+function solSnap() { return JSON.stringify({ stock: SOL.stock, waste: SOL.waste, found: SOL.found, tab: SOL.tab, moves: SOL.moves }); }
+function solRestore(js) { Object.assign(SOL, JSON.parse(js)); }
+
+// --- Actions ---
+function solPushUndo() { SOL.undo.push(solSnap()); if (SOL.undo.length > 600) SOL.undo.shift(); }
+
+function solMove(src, dst) {
+    const cards = solCards(src);
+    if (!cards.length || sameSpot(src, dst)) return { ok: false };
+    const chk = canDrop(cards, dst);
+    if (!chk.ok) return chk;
+    solPushUndo();
+    if (src.from === 'waste') SOL.waste.pop();
+    else if (src.from === 'found') SOL.found[src.i].pop();
+    else SOL.tab[src.i].splice(src.k);
+    (dst.to === 'found' ? SOL.found[dst.i] : SOL.tab[dst.i]).push(...cards);
+    let flipped = false;
+    if (src.from === 'tab') {                                   // la carte découverte se retourne
+        const col = SOL.tab[src.i], top = col[col.length - 1];
+        if (top && !top.up) { top.up = true; flipped = true; }
+    }
+    solAfter();
+    return { ok: true, flipped };
+}
+
+function solDraw() {
+    if (!SOL.stock.length && !SOL.waste.length) return { ok: false, why: 'La pioche est vide.' };
+    solPushUndo();
+    let recycled = false;
+    if (!SOL.stock.length) {                                    // on retourne la défausse pour refaire la pioche
+        SOL.stock = SOL.waste.reverse().map(c => Object.assign(c, { up: false }));
+        SOL.waste = []; recycled = true;
+    } else {
+        for (let i = 0; i < SOL.draw && SOL.stock.length; i++) SOL.waste.push(Object.assign(SOL.stock.pop(), { up: true }));
+    }
+    solAfter();
+    return { ok: true, recycled };
+}
+
+function solUndo() {
+    if (!SOL.undo.length || SOL.busy) return false;
+    solRestore(SOL.undo.pop());
+    SOL.won = false;
+    solSave(); solRender();
+    return true;
+}
+
+const solFoundCount = () => SOL.found.reduce((t, f) => t + f.length, 0);
+const solCanFinish = () => !SOL.won && !SOL.stock.length && !SOL.waste.length && SOL.tab.every(col => col.every(c => c.up)) && solFoundCount() < 52;
+
+function solAfter() {
+    SOL.moves++;
+    if (!SOL.started) { SOL.started = true; solStat(st => { st.played++; }); }
+    solSave(); solRender();
+    if (solFoundCount() === 52 && !SOL.won) solWin();
+}
+
+// Coup automatique quand on touche une carte : fondation d'abord, sinon la meilleure colonne
+function solAutoDest(src) {
+    const cards = solCards(src);
+    if (!cards.length) return null;
+    if (cards.length === 1 && src.from !== 'found') {
+        for (let i = 0; i < 4; i++) if (canFound(cards, SOL.found[i]).ok) return { to: 'found', i };
+    }
+    const order = [0, 1, 2, 3, 4, 5, 6];
+    const filled = order.filter(i => SOL.tab[i].length && canTab(cards, SOL.tab[i]).ok && !(src.from === 'tab' && src.i === i));
+    if (filled.length) return { to: 'tab', i: filled[0] };
+    if (cards[0].r === 'R' && !(src.from === 'tab' && src.k === 0)) {      // un Roi vers une colonne vide (inutile s'il y est déjà en bas)
+        const empty = order.find(i => !SOL.tab[i].length);
+        if (empty !== undefined) return { to: 'tab', i: empty };
+    }
+    return null;
+}
+
+// Indice : un coup utile, ou piocher
+function solHintMove() {
+    const tops = [{ from: 'waste' }, ...SOL.tab.map((col, i) => ({ from: 'tab', i, k: col.length - 1 }))].filter(s => solCards(s).length);
+    for (const s of tops) for (let i = 0; i < 4; i++) if (canFound(solCards(s), SOL.found[i]).ok) return { src: s, dst: { to: 'found', i } };
+    for (let i = 0; i < 7; i++) {                                       // déplacer une suite pour découvrir une carte cachée
+        const col = SOL.tab[i], k = col.findIndex(c => c.up);
+        if (k <= 0) continue;
+        for (let j = 0; j < 7; j++) if (j !== i && canTab(col.slice(k), SOL.tab[j]).ok) return { src: { from: 'tab', i, k }, dst: { to: 'tab', i: j } };
+    }
+    if (SOL.waste.length) for (let j = 0; j < 7; j++) if (canTab(SOL.waste.slice(-1), SOL.tab[j]).ok) return { src: { from: 'waste' }, dst: { to: 'tab', i: j } };
+    if (SOL.stock.length || SOL.waste.length) return { draw: true };
+    return null;
+}
+
+// --- Sauvegarde et statistiques ---
+function solSave() {
+    if (TEST && !TEST.solSave) return;
+    saveJSON('solitaire_game', { draw: SOL.draw, stock: SOL.stock, waste: SOL.waste, found: SOL.found, tab: SOL.tab,
+                                  moves: SOL.moves, elapsed: SOL.elapsed, started: SOL.started, won: SOL.won, initial: SOL.initial });
+}
+function solStats() { return Object.assign({ 1: { played: 0, won: 0, best: 0, bestMoves: 0 }, 3: { played: 0, won: 0, best: 0, bestMoves: 0 } }, loadJSON('solitaire_stats', {})); }
+function solStat(fn) { const all = solStats(); fn(all[SOL.draw]); if (!(TEST && !TEST.solSave)) saveJSON('solitaire_stats', all); }
+const coups = n => `${n} coup${n > 1 ? 's' : ''}`;
+const fmtTime = ms => { const t = Math.floor(ms / 1000); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
+
+// --- Affichage ---
+function solLayout() {
+    const b = $('sol-board'), W = b.clientWidth, H = b.clientHeight;
+    const pad = 6, g = Math.max(3, Math.round(W * 0.012));
+    let cw = Math.min(96, Math.floor((W - 2 * pad - 6 * g) / 7)), ch = Math.round(cw * 1.42);
+    const maxCh = Math.floor((H - 2 * pad) / 3.4);                  // écran large mais bas (ordinateur)
+    if (ch > maxCh) { ch = maxCh; cw = Math.round(ch / 1.42); }
+    const left = Math.round((W - (7 * cw + 6 * g)) / 2);
+    L = { W, H, pad, g, cw, ch, left, x: i => left + i * (cw + g), yTop: pad, yTab: pad + ch + Math.round(ch * 0.2) };
+    b.style.setProperty('--scw', cw + 'px');
+    b.style.setProperty('--sch', ch + 'px');
+}
+function solColSteps(col) {
+    const nd = col.filter(c => !c.up).length, nu = col.length - nd;
+    let d = Math.max(5, Math.round(L.ch * 0.13)), u = Math.round(L.ch * 0.3);
+    const avail = L.H - L.yTab - L.ch - L.pad, need = nd * d + Math.max(0, nu - 1) * u;
+    if (need > avail && need > 0) { const f = avail / need; d *= f; u *= f; }
+    return { d, u };
+}
+function solBuild() {
+    const b = $('sol-board');
+    b.innerHTML = '';
+    SOL.els = {}; SOL.slots = {};
+    const slot = (key, cls, txt) => { const d = document.createElement('div'); d.className = 'sslot ' + cls; d.textContent = txt; d.dataset.slot = key; b.appendChild(d); SOL.slots[key] = d; };
+    slot('stock', 'stock', '');
+    for (let i = 0; i < 4; i++) slot('f' + i, 'found', 'A');
+    for (let i = 0; i < 7; i++) slot('t' + i, 'tab', 'R');
+    for (const s of SUITS) for (const r of SRANKS) {
+        const d = document.createElement('div');
+        d.className = 'card scard' + (s === 'H' || s === 'D' ? ' red' : '');
+        d.dataset.id = r + s;
+        d.innerHTML = `<div class="rk">${r}<span>${SYM[s]}</span></div><div class="mid">${SYM[s]}</div>`;
+        b.appendChild(d);
+        SOL.els[r + s] = d;
+    }
+}
+function solRender() {
+    if (!SOL.active) return;
+    solLayout();
+    const pos = (el, x, y, z) => { el.style.left = x + 'px'; el.style.top = y + 'px'; if (z !== undefined) el.style.zIndex = z; };
+    pos(SOL.slots.stock, L.x(0), L.yTop);
+    SOL.slots.stock.textContent = SOL.stock.length ? '' : SOL.waste.length ? '↻' : '';
+    for (let i = 0; i < 4; i++) pos(SOL.slots['f' + i], L.x(3 + i), L.yTop);
+    for (let i = 0; i < 7; i++) pos(SOL.slots['t' + i], L.x(i), L.yTab);
+    const place = (c, x, y, z, under = false) => { const el = SOL.els[c.id]; pos(el, x, y, z); el.classList.toggle('down', !c.up); el.classList.toggle('under', under); };
+    SOL.stock.forEach((c, i) => place(c, L.x(0), L.yTop, 1 + i, i < SOL.stock.length - 1));
+    const w = SOL.waste, fan = SOL.draw === 3 ? Math.min(3, w.length) : 1, off = Math.round(L.cw * 0.42);
+    w.forEach((c, i) => { const j = i - (w.length - fan); place(c, L.x(1) + Math.max(0, j) * off, L.yTop, 1 + i, j < 0); });
+    SOL.found.forEach((f, fi) => f.forEach((c, i) => place(c, L.x(3 + fi), L.yTop, 1 + i, i < f.length - 1)));
+    SOL.tab.forEach((col, ci) => {
+        const { d, u } = solColSteps(col);
+        let y = L.yTab;
+        col.forEach((c, i) => { place(c, L.x(ci), Math.round(y), 10 + i); y += c.up ? u : d; });
+    });
+    $('sol-stats').innerHTML = `<span class="chip">${SOL.moves} coup${SOL.moves > 1 ? 's' : ''}</span><span class="chip">⏱ ${fmtTime(SOL.elapsed)}</span>` +
+        `<span class="chip">Pioche ${SOL.draw}</span>`;
+    $('sol-undo').disabled = !SOL.undo.length;
+    $('sol-finish').hidden = !solCanFinish();
+}
+function solMsg(text, err = false) { const m = $('sol-msg'); m.textContent = text; m.className = err ? 'err' : ''; }
+function solFlash(els, cls, t = 1300) { els.forEach(e => e && e.classList.add(cls)); setTimeout(() => els.forEach(e => e && e.classList.remove(cls)), t); }
+
+// --- Où est une carte ? ---
+function solLocate(id) {
+    if (SOL.stock.some(c => c.id === id)) return { from: 'stock' };
+    const wi = SOL.waste.findIndex(c => c.id === id);
+    if (wi >= 0) return { from: 'waste', top: wi === SOL.waste.length - 1 };
+    for (let i = 0; i < 4; i++) { const k = SOL.found[i].findIndex(c => c.id === id); if (k >= 0) return { from: 'found', i, top: k === SOL.found[i].length - 1 }; }
+    for (let i = 0; i < 7; i++) { const k = SOL.tab[i].findIndex(c => c.id === id); if (k >= 0) return { from: 'tab', i, k, up: SOL.tab[i][k].up }; }
+    return null;
+}
+
+// --- Gestes : toucher (coup automatique) ou glisser ---
+let sdrag = null;
+function solPointerDown(e) {
+    if (!SOL.active || SOL.busy || SOL.won) return;
+    const el = e.target.closest('.scard, .sslot');
+    if (!el) return;
+    e.preventDefault();
+    if (el.dataset.slot === 'stock' || (el.dataset.id && solLocate(el.dataset.id).from === 'stock')) { sdrag = { stock: true, sx: e.clientX, sy: e.clientY }; return; }
+    if (!el.dataset.id) return;
+    const loc = solLocate(el.dataset.id);
+    if (loc.from === 'waste' && !loc.top) { solMsg('Seule la carte du dessus de la défausse se joue.', true); return; }
+    if (loc.from === 'found' && !loc.top) return;
+    if (loc.from === 'tab' && !loc.up) { solMsg('Cette carte est cachée : elle se retourne quand elle arrive en bas de sa colonne.', true); return; }
+    const src = loc.from === 'tab' ? { from: 'tab', i: loc.i, k: loc.k } : loc.from === 'found' ? { from: 'found', i: loc.i } : { from: 'waste' };
+    const cards = solCards(src);
+    const els = cards.map(c => SOL.els[c.id]);
+    sdrag = { src, cards, els, sx: e.clientX, sy: e.clientY, moved: false, x0: parseFloat(els[0].style.left), y0: parseFloat(els[0].style.top) };
+    try { $('sol-board').setPointerCapture(e.pointerId); } catch (_) { }
+}
+function solPointerMove(e) {
+    if (!sdrag || sdrag.stock) return;
+    const dx = e.clientX - sdrag.sx, dy = e.clientY - sdrag.sy;
+    if (!sdrag.moved && Math.hypot(dx, dy) < 7) return;
+    if (!sdrag.moved) { sdrag.moved = true; sdrag.els.forEach((el, i) => { el.classList.add('drag'); el.style.zIndex = 1000 + i; }); }
+    sdrag.els.forEach(el => { el.style.transform = `translate(${dx}px, ${dy}px)`; });
+    sdrag.dx = dx; sdrag.dy = dy;
+}
+function solPointerUp(e) {
+    const d = sdrag; sdrag = null;
+    if (!d) return;
+    if (d.stock) { if (Math.hypot(e.clientX - d.sx, e.clientY - d.sy) < 12) solTapStock(); return; }
+    d.els.forEach(el => { el.classList.remove('drag'); el.style.transform = ''; });
+    if (!d.moved) { solTap(d.src); return; }
+    const cx = d.x0 + d.dx + L.cw / 2, cy = d.y0 + d.dy + L.ch / 2;
+    const col = Math.max(0, Math.min(6, Math.round((cx - L.left - L.cw / 2) / (L.cw + L.g))));
+    let dst = null;
+    if (cy < L.yTab - L.ch * 0.1) {
+        if (col >= 3) {                                                   // zone des fondations
+            dst = { to: 'found', i: col - 3 };
+            if (!canDrop(d.cards, dst).ok) for (let i = 0; i < 4; i++) if (canFound(d.cards, SOL.found[i]).ok) { dst = { to: 'found', i }; break; }
+        }
+    } else dst = { to: 'tab', i: col };
+    if (!dst || sameSpot(d.src, dst)) { solRender(); return; }
+    const r = solMove(d.src, dst);
+    if (r.ok) solMsg(r.flipped ? 'Une carte cachée se découvre.' : '');
+    else { solRender(); solMsg(r.why || 'Déplacement impossible.', true); solFlash(d.els, 'shake', 350); }
+}
+function solTap(src) {
+    const dst = solAutoDest(src);
+    const c = solCards(src)[0];
+    if (!dst) { solMsg(`Pas de place pour ${cname(c)} pour l'instant.`, true); solFlash([SOL.els[c.id]], 'shake', 350); return; }
+    const r = solMove(src, dst);
+    solMsg(r.ok && r.flipped ? 'Une carte cachée se découvre.' : '');
+}
+function solTapStock() {
+    const r = solDraw();
+    solMsg(r.ok ? (r.recycled ? 'La défausse est retournée : elle refait la pioche.' : '') : r.why, !r.ok);
+}
+
+async function solFinish() {
+    if (SOL.busy) return;
+    SOL.busy = true; $('sol-finish').hidden = true;
+    solMsg('On range les cartes…');
+    for (let guard = 0; guard < 60 && solFoundCount() < 52 && !HALTED; guard++) {
+        let moved = false;
+        for (let i = 0; i < 7 && !moved; i++) {
+            const col = SOL.tab[i];
+            if (!col.length) continue;
+            for (let f = 0; f < 4; f++) if (canFound(col.slice(-1), SOL.found[f]).ok) { SOL.busy = false; solMove({ from: 'tab', i, k: col.length - 1 }, { to: 'found', i: f }); SOL.busy = true; moved = true; break; }
+        }
+        if (!moved) break;
+        await solWait(110);
+    }
+    SOL.busy = false;
+}
+
+async function solWin() {
+    SOL.won = true;
+    let record = '';
+    solStat(st => {
+        st.won++;
+        if (!st.best || SOL.elapsed < st.best) { if (st.best) record = ' Nouveau record de temps !'; st.best = SOL.elapsed; }
+        if (!st.bestMoves || SOL.moves < st.bestMoves) st.bestMoves = SOL.moves;
+    });
+    solSave(); solRender();
+    solMsg('Bravo, réussite terminée !');
+    const st = solStats()[SOL.draw];
+    await solWait(500);
+    const v = await modal(`<h3>Bravo ! 🎉</h3><p>Réussite terminée en <b>${coups(SOL.moves)}</b> et <b>${fmtTime(SOL.elapsed)}</b>.${record}</p>
+        <p style="font-size:13px;color:#555">Pioche ${SOL.draw} : ${st.won} gagnée${st.won > 1 ? 's' : ''} sur ${st.played} · meilleur temps ${fmtTime(st.best)} · moins de coups : ${st.bestMoves}</p>`,
+        [{ label: 'Nouvelle donne', value: 'new' }, { label: 'Écran de départ', value: 'home', sec: true }], 2);
+    if (v === 'new') solStartNew();
+    else location.reload();
+}
+
+// --- Démarrage, menu, règles ---
+let solTimer = null, solTicks = 0;
+function solStart(opts) {
+    SOL.active = true;
+    $('sol').hidden = false;
+    const sv = opts.resume ? loadJSON('solitaire_game', null) : null;
+    if (sv && sv.tab) {
+        Object.assign(SOL, { draw: sv.draw, stock: sv.stock, waste: sv.waste, found: sv.found, tab: sv.tab, moves: sv.moves,
+                             elapsed: sv.elapsed || 0, started: sv.started, won: sv.won, initial: sv.initial, undo: [] });
+    } else {
+        SOL.draw = opts.draw === 3 ? 3 : 1;
+        solNewDeal(opts.seed);
+        solSave();
+    }
+    solBuild();
+    $('sol-board').classList.add('noanim');
+    solRender();
+    requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
+    solMsg(sv ? 'Réussite reprise.' : 'Touche une carte pour la jouer, ou fais-la glisser. Touche la pioche (en haut à gauche) pour retourner des cartes.');
+    if (!solTimer) solTimer = setInterval(solTick, 1000);
+}
+function solTick() {
+    if (!SOL.active || SOL.won || !SOL.started || document.hidden || HALTED) return;
+    SOL.elapsed += 1000;
+    const chips = $('sol-stats').querySelectorAll('.chip');
+    if (chips[1]) chips[1].textContent = '⏱ ' + fmtTime(SOL.elapsed);
+    if (++solTicks % 5 === 0) solSave();
+}
+function solStartNew() {
+    solNewDeal();
+    solBuild(); $('sol-board').classList.add('noanim'); solRender();
+    requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
+    solSave();
+    solMsg('Nouvelle donne : bonne réussite !');
+}
+function solReplay() {
+    solRestore(SOL.initial);
+    Object.assign(SOL, { moves: 0, elapsed: 0, started: false, won: false, undo: [] });
+    solSave(); solRender();
+    solMsg('Même donne, on recommence depuis le début.');
+}
+
+function solHint() {
+    if (!SOL.active || SOL.won || SOL.busy) return;
+    const h = solHintMove();
+    if (!h) { solMsg('Plus aucun coup possible : tu peux annuler des coups (↶) ou rejouer la donne (menu ☰).', true); return; }
+    if (h.draw) {
+        solMsg(SOL.stock.length ? 'Indice : pioche une carte.' : 'Indice : touche la pioche pour retourner la défausse.');
+        solFlash([SOL.slots.stock, SOL.stock.length ? SOL.els[SOL.stock[SOL.stock.length - 1].id] : null], 'hint');
+        return;
+    }
+    const cards = solCards(h.src);
+    const target = (h.dst.to === 'found' ? SOL.found[h.dst.i] : SOL.tab[h.dst.i]).slice(-1)[0];
+    const tEl = target ? SOL.els[target.id] : SOL.slots[(h.dst.to === 'found' ? 'f' : 't') + h.dst.i];
+    solFlash([...cards.map(c => SOL.els[c.id]), tEl], 'hint');
+    solMsg(`Indice : ${cname(cards[0])}${cards.length > 1 ? ' avec sa suite' : ''} → ` +
+           (h.dst.to === 'found' ? 'sur une fondation.' : target ? `sur ${cname(target)}.` : 'sur la colonne vide.'));
+}
+
+function solStatsHTML() {
+    const all = solStats();
+    const row = k => { const s = all[k]; return `<tr><td>Pioche ${k}</td><td>${s.played}</td><td>${s.won}</td><td>${s.played ? Math.round(100 * s.won / s.played) + ' %' : '–'}</td><td>${s.best ? fmtTime(s.best) : '–'}</td><td>${s.bestMoves || '–'}</td></tr>`; };
+    return `<table class="sheet"><tr><th></th><th>Jouées</th><th>Gagnées</th><th>%</th><th>Meilleur temps</th><th>Moins de coups</th></tr>${row(1)}${row(3)}</table>
+            <p style="font-size:12px;color:#666">Une réussite compte comme jouée dès le premier coup.</p>`;
+}
+
+async function solMenu() {
+    if (SOL.busy) return;
+    menuChoice = null;
+    const v0 = await modal(`<h3>Menu <small style="font-size:12px;color:#777;font-weight:400">version ${VERSION}</small></h3><div class="menu-list">
+        <button data-v="new">🃏 Nouvelle donne<small>Mélanger et redistribuer</small></button>
+        <button data-v="replay">↺ Rejouer cette donne<small>Repartir du début avec les mêmes cartes</small></button>
+        <button data-v="stats">📊 Statistiques<small>Parties jouées, gagnées, records</small></button>
+        <button data-v="home">🏠 Écran de départ<small>La réussite est enregistrée</small></button>
+        <button data-v="quit" class="quit">⏻ Quitter<small>La réussite est enregistrée</small></button></div>`,
+        [{ label: 'Continuer', value: 'back' }], 2);
+    const v = menuChoice || v0;
+    menuChoice = null;
+    if (v === 'new') solStartNew();
+    else if (v === 'replay') solReplay();
+    else if (v === 'stats') modal(`<h3>Statistiques du Solitaire</h3>${solStatsHTML()}`, [{ label: 'Fermer', value: 1 }], 2);
+    else if (v === 'home') { solSave(); location.reload(); }
+    else if (v === 'quit') quitGame(true);
+}
+
+function solRulesHTML() {
+    return `<h3>Règles : Solitaire</h3>
+    <h4>But</h4><p>Ranger les 52 cartes sur les 4 <b>fondations</b> (en haut à droite), une par couleur, de l'As au Roi.</p>
+    <h4>La table</h4><ul>
+        <li>7 <b>colonnes</b> : la 1re a 1 carte, la 7e en a 7 ; seule la dernière est retournée.</li>
+        <li>La <b>pioche</b> (en haut à gauche) : on la touche pour retourner ${SOL.draw === 3 ? '3 cartes à la fois (seule celle du dessus se joue)' : 'une carte'} sur la <b>défausse</b>. Quand elle est vide, on la touche pour retourner la défausse ; passages illimités.</li></ul>
+    <h4>Déplacements</h4><ul>
+        <li>Dans les colonnes, on descend en <b>alternant rouge et noir</b> : un 6♥ va sur un 7♠ ou un 7♣.</li>
+        <li>On peut déplacer une carte seule ou toute une suite déjà rangée.</li>
+        <li>Seul un <b>Roi</b> (ou une suite qui commence par un Roi) va sur une colonne vide.</li>
+        <li>Une carte cachée se retourne quand elle arrive en bas de sa colonne.</li>
+        <li>Sur les fondations, on monte <b>dans la même couleur</b> : As, 2, 3… jusqu'au Roi. On peut redescendre une carte d'une fondation vers une colonne.</li></ul>
+    <h4>Sur cet écran</h4><ul>
+        <li><b>Toucher</b> une carte la joue à la meilleure place (fondation d'abord) ; on peut aussi la <b>faire glisser</b>.</li>
+        <li>↶ annule le dernier coup, 💡 donne un indice. Quand tout est découvert, « Terminer » range les cartes tout seul.</li></ul>`;
+}
+
+$('sol-board').addEventListener('pointerdown', solPointerDown);
+$('sol-board').addEventListener('pointermove', solPointerMove);
+$('sol-board').addEventListener('pointerup', solPointerUp);
+$('sol-board').addEventListener('pointercancel', () => { if (sdrag && sdrag.els) sdrag.els.forEach(el => { el.classList.remove('drag'); el.style.transform = ''; }); sdrag = null; solRender(); });
+$('sol-undo').addEventListener('click', () => { if (solUndo()) solMsg('Coup annulé.'); });
+$('sol-hint').addEventListener('click', solHint);
+$('sol-rules').addEventListener('click', () => modal(solRulesHTML(), [{ label: 'Fermer', value: 1 }], 2));
+$('sol-menu').addEventListener('click', solMenu);
+$('sol-finish').addEventListener('click', solFinish);
+window.addEventListener('resize', () => { if (SOL.active) solRender(); });
+document.addEventListener('visibilitychange', () => { if (SOL.active) solSave(); });
+window.solitaire = { SOL, canFound, canTab, solMove, solDraw, solUndo, solAutoDest, solHintMove, solLocate, solNewDeal, solRender, solFinish, solCanFinish, solCards, solStats };
+
+if (TEST && !TEST.showStart && TEST.game === 'solitaire') {
+    solStart({ draw: TEST.draw || 1, seed: TEST.seed });
+} else if (TEST && !TEST.showStart) {      // tests automatiques : pas d'écran de départ
     resetMatch(TEST.game || 'classique', TEST.goal || (TEST.game === 'coinche' ? 1500 : 1000), TEST.rules);
     main();
 } else {
