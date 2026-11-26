@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#083d1d">
-<title>Belote</title>
+<title>Jeux de cartes</title>
 <style>
     * { box-sizing: border-box; }
     html, body { margin: 0; height: 100%; }
@@ -149,6 +149,52 @@
     #hand .card.dim { filter: brightness(0.6); }
     #hand .card.hint { transform: translateY(-10px); box-shadow: 0 0 0 3px #ffd54f, 0 3px 8px rgba(0,0,0,0.4); }
 
+    /* --- Enchères de la coinche --- */
+    .bid-row { display: flex; justify-content: center; align-items: center; gap: 6px; width: 100%; }
+    .bid-val { min-width: 74px; text-align: center; font-size: 22px; font-weight: 800; }
+    .act.bid-step { width: 46px; font-size: 22px; padding: 5px 0; }
+    .act.bid-suit { min-width: 46px; padding: 8px 6px; font-size: 18px; }
+    .act.coinche { background: #e53935; color: #fff; }
+    .act:disabled { opacity: 0.35; }
+    #turned .bidnow { font-size: 26px; font-weight: 800; background: rgba(0,0,0,0.25); border-radius: 12px; padding: 6px 14px; text-align: center; }
+    #turned .bidnow small { display: block; font-size: 12px; font-weight: 600; }
+    #trump-badge .sym.txt { font-size: 17px; font-weight: 800; }
+    #trump-badge .coin { font-size: 11px; font-weight: 800; color: #ff8a80; }
+
+    /* --- Écran de départ --- */
+    #start {
+        position: fixed; inset: 0; z-index: 70; background: radial-gradient(circle at 50% 30%, #13803d, #08431f);
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 16px; overflow: auto;
+    }
+    #start[hidden] { display: none; }
+    #start h1 { margin: 0; font-size: 34px; letter-spacing: 1px; }
+    #start .suits { font-size: 26px; letter-spacing: 6px; }
+    #start .suits .r { color: #ff6b6b; }
+    .games { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; width: 100%; max-width: 520px; }
+    .game-card {
+        flex: 1 1 200px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.25); color: #fff;
+        border-radius: 14px; padding: 12px 14px; text-align: left; font-size: 13px; line-height: 1.35;
+    }
+    .game-card b { display: block; font-size: 17px; margin-bottom: 3px; }
+    .game-card.sel { background: #fff; color: #0b5d2b; border-color: #ffd54f; box-shadow: 0 0 0 3px #ffd54f; }
+    .goals { display: flex; gap: 8px; align-items: center; font-size: 14px; }
+    .goal-btn { background: rgba(255,255,255,0.12); color: #fff; border: 2px solid transparent; border-radius: 10px; padding: 7px 12px; font-size: 15px; font-weight: 700; }
+    .goal-btn.sel { background: #fff; color: #0b5d2b; border-color: #ffd54f; }
+    .start-btn { background: #ffd54f; color: #222; border: none; border-radius: 12px; padding: 12px 34px; font-size: 18px; font-weight: 800; box-shadow: 0 3px 10px rgba(0,0,0,0.35); }
+    .resume-btn { background: rgba(255,255,255,0.15); color: #fff; border: none; border-radius: 12px; padding: 10px 18px; font-size: 15px; font-weight: 600; }
+    #start .hint-txt { font-size: 12px; opacity: 0.8; text-align: center; max-width: 420px; }
+    #start { justify-content: flex-start; }
+    .start-inner { margin: auto; display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; max-width: 520px; }
+    .opt-block { width: 100%; background: rgba(0,0,0,0.2); border-radius: 12px; padding: 8px 10px; }
+    .opt-block[hidden] { display: none; }
+    .seg-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+    .seg { display: flex; gap: 6px; }
+    .seg button { flex: 1; background: rgba(255,255,255,0.12); color: #fff; border: 2px solid transparent; border-radius: 9px; padding: 7px 4px; font-size: 13px; font-weight: 700; }
+    .seg button.sel { background: #fff; color: #0b5d2b; border-color: #ffd54f; }
+    .vals { font-size: 12px; line-height: 1.45; margin-top: 7px; }
+    .vals b { color: #ffd54f; }
+    .vals label { display: flex; gap: 6px; align-items: center; margin-top: 6px; font-size: 13px; font-weight: 600; }
+
     /* --- Fenêtres (résultats, options, règles) --- */
     .overlay {
         position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex;
@@ -198,7 +244,8 @@
 <body>
 <div id="app">
     <header>
-        <span class="title">Belote</span>
+        <button class="top-btn" id="btn-menu" title="Menu (choix du jeu)">☰</button>
+        <span class="title" id="game-title">Belote</span>
         <div id="scorebar"></div>
         <button class="top-btn" id="btn-tricks" title="Plis de la donne">Plis</button>
         <button class="top-btn" id="btn-rules" title="Règles">?</button>
@@ -224,6 +271,31 @@
         <div id="hand"></div>
     </div>
 </div>
+<!-- Écran de départ : choix du jeu -->
+<div id="start" hidden><div class="start-inner">
+    <h1>Jeux de cartes</h1>
+    <div class="suits"><span class="r">♥</span>♠<span class="r">♦</span>♣</div>
+    <div class="games">
+        <button class="game-card" data-game="classique"><b>Belote classique</b>Une carte est retournée : on prend à sa couleur ou on passe, puis 2e tour.</button>
+        <button class="game-card" data-game="coinche"><b>Belote coinchée</b>Enchères de 80 à 160 ou capot, sans atout et tout atout, coinche et surcoinche.</button>
+    </div>
+    <div class="opt-block" id="sata-block">
+        <div class="seg-title">Coinche : valeurs Sans atout / Tout atout</div>
+        <div class="seg"><button data-sata="officiel">Officielle</button><button data-sata="mixte">SA off. · TA 258</button><button data-sata="belote">Valeurs belote</button></div>
+        <div class="vals" id="sata-vals"></div>
+    </div>
+    <div class="opt-block">
+        <div class="seg-title">Annonces</div>
+        <div class="seg"><button data-ann="0">Sans annonces</button><button data-ann="1">Avec annonces</button></div>
+        <div class="vals" id="ann-vals"></div>
+    </div>
+    <div class="goals"><span>Partie en</span>
+        <button class="goal-btn" data-goal="1000">1000</button><button class="goal-btn" data-goal="1500">1500</button><button class="goal-btn" data-goal="2000">2000</button>
+    </div>
+    <button class="start-btn" id="btn-start">Jouer</button>
+    <button class="resume-btn" id="btn-resume" hidden></button>
+    <p class="hint-txt">Joueurs (humain ou ordinateur), cartes visibles, vitesse : bouton ⚙ pendant la partie. Règles : bouton ?.</p>
+</div></div>
 <div class="overlay" id="overlay" hidden><div class="box" id="box"></div></div>
 <!-- Fenêtres d'information (plis, règles, options) : au-dessus, sans bloquer la partie -->
 <div class="overlay" id="overlay2" hidden style="z-index:60"><div class="box" id="box2"></div></div>
@@ -245,8 +317,17 @@ const RANKS = ['A', '10', 'R', 'D', 'V', '9', '8', '7'];  // hors atout, du plus
 const PLAIN_PTS = { A: 11, '10': 10, R: 4, D: 3, V: 2, '9': 0, '8': 0, '7': 0 };
 const TRUMP_ORDER = ['V', '9', 'A', '10', 'R', 'D', '8', '7'];
 const TRUMP_PTS = { V: 20, '9': 14, A: 11, '10': 10, R: 4, D: 3, '8': 0, '7': 0 };
+const SA_PTS = { A: 19, '10': 10, R: 4, D: 3, V: 2, '9': 0, '8': 0, '7': 0 };     // sans atout (coinche)
+const TA_PTS = { V: 14, '9': 9, A: 6, '10': 5, R: 3, D: 1, '8': 0, '7': 0 };      // tout atout (coinche)
+// Coinche : variantes de valeurs pour le sans atout et le tout atout (choix sur l'écran de départ)
+const VARIANTS = {
+    officiel: { name: 'Officielle', desc: '162 points dans tous les contrats', SA: SA_PTS, TA: TA_PTS },
+    mixte:    { name: 'SA officiel, TA à 258', desc: 'tout atout avec les valeurs d\'atout', SA: SA_PTS, TA: TRUMP_PTS },
+    belote:   { name: 'Valeurs de la belote', desc: 'SA à 130, TA à 258', SA: PLAIN_PTS, TA: TRUMP_PTS },
+};
+const DEFAULT_RULES = { saTa: 'officiel', annonces: false, annoncesContrat: true };
 const TEAM = ['1/3', '2/4'];
-const GOAL = 1000;
+const GAME_NAME = { classique: 'Belote classique', coinche: 'Belote coinchée' };
 
 const makeDeck = () => SUITS.flatMap(s => RANKS.map(r => ({ s, r, id: r + s })));
 const next = p => (p + 1) % 4;
@@ -268,6 +349,9 @@ const DEFAULT_OPTIONS = {
     greyIllegal: false,    // griser les cartes que je n'ai pas le droit de jouer
     pauseTrick: false,     // attendre un appui après chaque pli
     speed: 'normale',
+    game: 'classique',     // dernier jeu choisi sur l'écran de départ
+    goals: { classique: 1000, coinche: 1500 },
+    rules: Object.assign({}, DEFAULT_RULES),
 };
 const SPEED = { lente: 1100, normale: 650, rapide: 250 };
 const TEST = window.BELOTE_TEST || null;     // utilisé par les tests automatiques
@@ -295,6 +379,11 @@ const G = {
     belote: { holder: null, count: 0 },
     ai: null, turnPlayer: null, bubbles: {}, msg: '', msgKind: '', actions: null, waiting: null,
     phase: 'start', handNo: 0,
+    game: 'classique', goal: 1000,   // type de jeu et score à atteindre (écran de départ)
+    mode: 'suit',                    // 'suit' = à la couleur, 'SA' = sans atout, 'TA' = tout atout
+    contract: null,                  // coinche : { value, capot, type, suit, coinche, by }
+    rules: Object.assign({}, DEFAULT_RULES),   // valeurs SA/TA et annonces choisies au départ
+    annonces: null,                  // annonces de la donne (si elles sont jouées)
 };
 const saved = loadJSON('belote_match', null);
 if (saved && Array.isArray(saved.scores)) Object.assign(G, saved, { firstHand: true });
@@ -302,14 +391,18 @@ if (saved && Array.isArray(saved.scores)) Object.assign(G, saved, { firstHand: t
 function saveMatch() {
     saveJSON('belote_match', {
         scores: G.scores, pat: G.pat, level: G.level, firstWinner: G.firstWinner,
-        dealer: G.dealer, lastWinnerTeam: G.lastWinnerTeam,
+        dealer: G.dealer, lastWinnerTeam: G.lastWinnerTeam, game: G.game, goal: G.goal, rules: G.rules,
     });
 }
 
 // Hauteur (1 = la plus forte) et valeur d'une carte selon l'atout
-const height = c => (c.s === G.trump ? TRUMP_ORDER.indexOf(c.r) : RANKS.indexOf(c.r)) + 1;
-const points = c => (c.s === G.trump ? TRUMP_PTS[c.r] : PLAIN_PTS[c.r]);
-const beats = (a, b) => (a.s === b.s ? height(a) < height(b) : a.s === G.trump);
+const isTrumpOrder = c => G.mode === 'TA' || (G.mode === 'suit' && c.s === G.trump);
+const height = c => (isTrumpOrder(c) ? TRUMP_ORDER.indexOf(c.r) : RANKS.indexOf(c.r)) + 1;
+const variant = () => VARIANTS[G.rules.saTa] || VARIANTS.officiel;
+const points = c => (G.mode === 'TA' ? variant().TA[c.r] : G.mode === 'SA' ? variant().SA[c.r] : (c.s === G.trump ? TRUMP_PTS[c.r] : PLAIN_PTS[c.r]));
+const handTotal = () => makeDeck().reduce((t, c) => t + points(c), 0) + 10;   // total de la donne, 10 de der compris
+const floor10 = x => Math.floor(x / 10) * 10;
+const beats = (a, b) => (a.s === b.s ? height(a) < height(b) : (G.mode === 'suit' && a.s === G.trump));
 
 function trickWinner(trick) {
     let best = trick[0];
@@ -342,6 +435,12 @@ function trickInfo(p) {
 function legalCards(p) {
     const hand = G.hands[p];
     if (!G.trick.length) return hand.slice();                         // on entame : tout est permis
+    if (G.mode !== 'suit') {                                          // sans atout / tout atout : pas de coupe
+        const n = noTrumpInfo(p);
+        if (!n.follow.length) return hand.slice();
+        if (G.mode === 'TA' && n.higher.length) return n.higher;     // tout atout : il faut monter
+        return n.follow;
+    }
     const i = trickInfo(p);
     if (i.led === i.T) {                                              // atout demandé
         if (i.trumps.length) return i.higher.length ? i.higher : i.trumps;   // jouer atout, en montant si possible
@@ -358,8 +457,23 @@ function legalCards(p) {
 
 const list = cards => cards.map(cname).join(', ');
 
+// Sans atout / tout atout : fournir (et monter en tout atout)
+function noTrumpInfo(p) {
+    const led = G.trick[0].card.s;
+    const follow = G.hands[p].filter(c => c.s === led);
+    const inSuit = G.trick.filter(e => e.card.s === led).map(e => e.card);
+    const best = inSuit.reduce((a, b) => (height(a) < height(b) ? a : b));
+    const higher = follow.filter(c => height(c) < height(best));
+    return { led, follow, best, higher };
+}
+
 // Explication d'une carte refusée (pour un joueur humain)
 function explainIllegal(p, card) {
+    if (G.mode !== 'suit') {
+        const n = noTrumpInfo(p);
+        if (card.s !== n.led) return `${suitTxt(n.led)} est demandé : vous devez fournir, vous en avez encore (${list(n.follow)}).`;
+        return `Tout atout : il faut toujours monter dans la couleur demandée. Le ${cname(n.best)} est sur le tapis, vous devez jouer plus fort : ${list(n.higher)}.`;
+    }
     const i = trickInfo(p);
     const who = `le joueur ${i.winner.p + 1}, ${i.partnerMaster ? 'votre partenaire' : 'un adversaire'}`;
     if (i.led === i.T) {
@@ -379,6 +493,72 @@ function explainIllegal(p, card) {
 }
 
 // =====================================================================
+// ANNONCES : suites (tierce, cinquante, cent) et carrés
+// =====================================================================
+const NAT = ['7', '8', '9', '10', 'V', 'D', 'R', 'A'];          // ordre des suites
+const SEQ = { 3: { name: 'Tierce', value: 20 }, 4: { name: 'Cinquante', value: 50 }, 5: { name: 'Cent', value: 100 } };
+const RANK_PLURAL = { V: 'valets', '9': 'neuf', A: 'as', '10': 'dix', R: 'rois', D: 'dames', '8': 'huit', '7': 'sept' };
+const CARRE = { V: 200, '9': 150, A: 100, '10': 100, R: 100, D: 100 };          // à la couleur et en tout atout
+const CARRE_SA = { A: 200, '10': 150, R: 100, D: 100, V: 100 };                 // en sans atout
+
+function findAnnonces(hand, mode = G.mode, trump = G.trump) {
+    const out = [];
+    for (const s of SUITS) {
+        const idx = hand.filter(c => c.s === s).map(c => NAT.indexOf(c.r)).sort((a, b) => a - b);
+        let start = 0;
+        for (let i = 1; i <= idx.length; i++) {
+            if (i === idx.length || idx[i] !== idx[i - 1] + 1) {
+                const len = i - start;
+                if (len >= 3) {
+                    const k = SEQ[Math.min(len, 5)], top = idx[i - 1];
+                    out.push({ type: 'seq', value: k.value, top, suit: s, trump: mode === 'suit' && s === trump,
+                               label: `${k.name} au ${NAT[top]}${SYM[s]}` });
+                }
+                start = i;
+            }
+        }
+    }
+    const table = mode === 'SA' ? CARRE_SA : CARRE;
+    for (const r of RANKS) {
+        if (table[r] && SUITS.every(s => hand.some(c => c.s === s && c.r === r))) {
+            out.push({ type: 'carre', value: table[r], top: 8 - RANKS.indexOf(r), rank: r, label: `Carré de ${RANK_PLURAL[r]}` });
+        }
+    }
+    return out;
+}
+
+// Comparaison de deux annonces : valeur, puis carré avant suite, puis plus haute carte, puis suite à l'atout
+function cmpAnnonce(a, b) {
+    return (a.value - b.value) || ((a.type === 'carre') - (b.type === 'carre')) || (a.top - b.top) || ((a.trump ? 1 : 0) - (b.trump ? 1 : 0));
+}
+
+// Qui marque ? Seule l'équipe qui a la plus forte annonce marque toutes ses annonces ; égalité parfaite : personne
+function resolveAnnonces() {
+    const list = [0, 1, 2, 3].map(p => findAnnonces(G.hands[p]));
+    const best = [0, 1].map(t => list.filter((_, p) => team(p) === t).flat().reduce((m, a) => (!m || cmpAnnonce(a, m) > 0 ? a : m), null));
+    let winner = null, tie = false;
+    if (best[0] && !best[1]) winner = 0;
+    else if (best[1] && !best[0]) winner = 1;
+    else if (best[0] && best[1]) {
+        const c = cmpAnnonce(best[0], best[1]);
+        if (c > 0) winner = 0; else if (c < 0) winner = 1; else tie = true;
+    }
+    const pts = [0, 0];
+    if (winner !== null) pts[winner] = list.filter((_, p) => team(p) === winner).flat().reduce((t, a) => t + a.value, 0);
+    G.annonces = { list, winner, tie, points: pts };
+}
+
+const annPts = () => (G.annonces ? G.annonces.points.slice() : [0, 0]);
+
+function annonceSummary() {
+    const A = G.annonces;
+    if (!A || A.list.every(l => !l.length)) return 'Aucune annonce.';
+    if (A.tie) return 'Annonces à égalité parfaite : personne ne les marque.';
+    const det = A.list.map((l, p) => (team(p) === A.winner && l.length ? `J${p + 1} : ${l.map(a => `${a.label} (${a.value})`).join(', ')}` : null)).filter(Boolean).join(' ; ');
+    return `Annonces : l'équipe ${TEAM[A.winner]} marque ${A.points[A.winner]} (${det}).`;
+}
+
+// =====================================================================
 // INTELLIGENCE DE L'ORDINATEUR (d'après « carteordi » et « annonceordi »)
 // =====================================================================
 function initAI() {
@@ -388,6 +568,7 @@ function initAI() {
         led: { H: 0, S: 0, D: 0, C: 0 },                              // nombre de plis entamés dans chaque couleur
         trumpsLeft: 8,                                                // atouts pas encore joués
     };
+    if (G.mode !== 'suit') { G.ai.trumpsLeft = 0; G.ai.hasTrump = [false, false, false, false]; }   // sans atout / tout atout
 }
 
 function noMoreTrump(p) {
@@ -489,6 +670,110 @@ function aiBid(p, round) {
     return null;
 }
 
+// ---------------- Coinche : estimation d'une main et enchères de l'ordinateur ----------------
+const CONTRACTS = [...SUITS.map(s => ({ type: 'suit', suit: s })), { type: 'SA' }, { type: 'TA' }];
+const sameContract = (a, b) => a && b && a.type === b.type && (a.type !== 'suit' || a.suit === b.suit);
+const contractTxt = c => (c.type === 'suit' ? SYM[c.suit] : c.type === 'SA' ? 'Sans atout' : 'Tout atout');
+const contractShort = c => (c.type === 'suit' ? SYM[c.suit] : c.type);
+const valueTxt = c => (c.capot ? 'Capot' : String(c.value));
+
+// Points que la main peut apporter si ce contrat est joué (estimation simple)
+// Total d'un type de contrat selon la variante choisie (162, 130 ou 258)
+const totalFor = type => (type === 'SA' || type === 'TA') ? 4 * Object.values(variant()[type]).reduce((a, b) => a + b, 0) + 10 : 162;
+
+function handEstimate(hand, type, suit) {
+    const of = s => hand.filter(c => c.s === s);
+    const has = (cs, r) => cs.some(c => c.r === r);
+    let pts = 0;
+    if (type === 'suit') {
+        const tr = of(suit), n = tr.length;
+        const V = has(tr, 'V'), N = has(tr, '9'), A = has(tr, 'A');
+        if (V) pts += 20;
+        if (N) pts += V ? 15 : (n >= 3 ? 10 : 3);
+        if (A) pts += (V || N) ? 11 : (n >= 3 ? 8 : 4);
+        if (has(tr, '10')) pts += (V && N) ? 8 : 4;
+        if (has(tr, 'R') && has(tr, 'D')) pts += 24;                    // belote-rebelote
+        else pts += (has(tr, 'R') ? 2 : 0) + (has(tr, 'D') ? 2 : 0);
+        pts += tr.filter(c => c.r === '8' || c.r === '7').length * 3;
+        if (n > 3) pts += (n - 3) * 10;                                  // longueur à l'atout
+        for (const s of SUITS) if (s !== suit) {
+            const cs = of(s);
+            if (has(cs, 'A')) { pts += 14; if (has(cs, '10')) pts += 10; }
+            else if (has(cs, '10') && cs.length >= 3) pts += 3;
+            if (n >= 3) { if (!cs.length) pts += 8; else if (cs.length === 1 && !has(cs, 'A')) pts += 4; }   // coupes
+        }
+    } else if (type === 'SA') {
+        for (const s of SUITS) {
+            const cs = of(s);
+            if (has(cs, 'A')) { pts += 24; if (has(cs, '10')) { pts += 12; if (cs.length >= 4) pts += 8; } }
+            else if (has(cs, '10') && cs.length >= 3) pts += 3;
+        }
+    } else {   // tout atout
+        for (const s of SUITS) {
+            const cs = of(s);
+            if (has(cs, 'V')) { pts += 22; if (has(cs, '9')) { pts += 12; if (cs.length >= 4) pts += 5; } }
+            else if (has(cs, '9') && cs.length >= 3) pts += 4;
+        }
+    }
+    return type === 'suit' ? pts : Math.round(pts * totalFor(type) / 162);   // à l'échelle des valeurs choisies
+}
+
+// Points que la main peut prendre en défense contre ce contrat
+function defenseEstimate(hand, c) {
+    const of = s => hand.filter(x => x.s === s);
+    const has = (cs, r) => cs.some(x => x.r === r);
+    let pts = 0;
+    for (const s of SUITS) {
+        const cs = of(s);
+        if (c.type === 'suit' && s === c.suit) {
+            if (has(cs, 'V')) pts += 20;
+            if (has(cs, '9')) pts += has(cs, 'V') ? 14 : (cs.length >= 2 ? 10 : 0);
+            if (has(cs, 'A') && (has(cs, 'V') || has(cs, '9'))) pts += 8;
+            if (cs.length >= 3) pts += 10;
+        } else if (c.type === 'TA') {
+            if (has(cs, 'V')) { pts += 18; if (has(cs, '9')) pts += 10; }
+        } else {
+            if (has(cs, 'A')) { pts += c.type === 'SA' ? 20 : 11; if (has(cs, '10')) pts += c.type === 'SA' ? 10 : 8; }
+        }
+    }
+    return c.type === 'suit' ? pts : Math.round(pts * totalFor(c.type) / 162);
+}
+
+// Décision de l'ordinateur pendant les enchères : passer, annoncer ou coincher
+function aiCoincheAction(p, cur, bids) {
+    const hand = G.hands[p];
+    // Coincher un contrat adverse qui semble trop haut
+    if (cur && !cur.capot && team(cur.by) !== team(p)) {
+        let def = defenseEstimate(hand, cur) + 20;                       // + aide du partenaire
+        if (G.rules.annonces && G.rules.annoncesContrat) def += Math.round(0.8 * findAnnonces(hand, cur.type, cur.suit).reduce((t, a) => t + a.value, 0));
+        const margin = (TEST && TEST.coincheMargin !== undefined) ? TEST.coincheMargin : 20;   // prudence
+        if (def >= totalFor(cur.type) - cur.value + margin) return { kind: 'coinche' };
+    }
+    const lastPartner = [...bids].reverse().find(b => b.kind === 'bid' && b.by === partner(p));
+    const oppBid = bids.some(b => b.kind === 'bid' && team(b.by) !== team(p));
+    let best = null;
+    for (const c of CONTRACTS) {
+        let est = handEstimate(hand, c.type, c.suit);
+        if (G.rules.annonces && G.rules.annoncesContrat) est += Math.round(0.8 * findAnnonces(hand, c.type, c.suit).reduce((t, a) => t + a.value, 0));
+        const scale = totalFor(c.type) / 162;                            // SA à 130, TA à 258…
+        if (lastPartner) est += Math.round((sameContract(lastPartner, c) ? 40 : 15) * scale);   // soutien du partenaire
+        else est += Math.round((oppBid ? 20 : 30) * scale);              // aide supposée du partenaire
+        if (est <= totalFor(c.type) / 2 + 4) est = Math.min(est, 70);    // il faut aussi faire plus que la défense
+        if (!best || est > best.est) best = Object.assign({ est }, c);
+    }
+    const target = Math.min(160, Math.floor(best.est / 10) * 10);
+    const minBid = cur ? (cur.capot ? Infinity : cur.value + 10) : 80;
+    if (cur && team(cur.by) === team(p) && !sameContract(best, cur) && best.est < cur.value + 40) {
+        return { kind: 'pass' };                                         // ne pas couvrir son partenaire sans raison
+    }
+    if (target >= Math.max(80, minBid)) return { kind: 'bid', value: target, capot: false, type: best.type, suit: best.suit };
+    return { kind: 'pass' };
+}
+
+function aiSurcoinche(p, cur) {
+    return handEstimate(G.hands[p], cur.type, cur.suit) + 30 >= cur.value + 40;
+}
+
 // =====================================================================
 // DÉROULEMENT D'UNE DONNE
 // =====================================================================
@@ -496,6 +781,7 @@ function initHand() {
     G.hands = [[], [], [], []]; G.turned = null; G.trump = null; G.taker = null;
     G.trick = []; G.tricks = []; G.played = new Set(); G.cardPts = [0, 0]; G.tricksWon = [0, 0]; G.der = null;
     G.belote = { holder: null, count: 0 }; G.bubbles = {}; G.turnPlayer = null;
+    G.mode = 'suit'; G.contract = null; G.annonces = null;
     G.leader = null; G.trickWinnerP = null;
     initAI();
 }
@@ -526,7 +812,20 @@ function dealRest() {
     G.hands[G.taker].push(G.turned);
 }
 
+// Coinche : 8 cartes à chacun par paquets de 3, 2, 3, sans carte retournée
+function dealAll() {
+    let i = 0, p = next(G.dealer);
+    for (const n of [3, 2, 3]) for (let k = 0; k < 4; k++, p = next(p)) for (let x = 0; x < n; x++) G.hands[p].push(G.deck[i++]);
+}
+function collectHandsInOrder() {
+    const d = [];
+    let p = next(G.dealer);
+    for (let k = 0; k < 4; k++, p = next(p)) d.push(...G.hands[p]);
+    G.deck = d;
+}
+
 function detectBelote() {
+    if (G.mode !== 'suit' || !G.trump) return;     // pas de belote en sans atout ni en tout atout
     for (let p = 0; p < 4; p++) {
         const h = G.hands[p];
         if (h.some(c => c.s === G.trump && c.r === 'R') && h.some(c => c.s === G.trump && c.r === 'D')) G.belote.holder = p;
@@ -554,10 +853,15 @@ function playCard(p, card) {
     G.trick.push({ p, card, wasMaster });
     G.played.add(card.id);
     trackPlay(p, card, pos, winnerBefore);
+    const said = [];
+    if (G.tricks.length === 0 && G.annonces && G.annonces.list[p].length) {      // annonces : au premier pli
+        said.push(G.annonces.list[p].map(a => a.label).join(' + '));
+    }
     if (G.belote.holder === p && card.s === G.trump && (card.r === 'R' || card.r === 'D')) {
         G.belote.count++;
-        bubble(p, G.belote.count === 1 ? 'Belote !' : 'Rebelote !', 'belote', 1800);
+        said.push(G.belote.count === 1 ? 'Belote' : 'Rebelote');
     }
+    if (said.length) bubble(p, said.join(' · ') + ' !', 'belote', said[0].length > 9 ? 2600 : 1800);
 }
 
 // Décompte de la donne (règles classiques)
@@ -565,17 +869,19 @@ function scoreHand() {
     const T = team(G.taker), D = 1 - T;
     const bel = [0, 0];
     if (G.belote.holder !== null) bel[team(G.belote.holder)] = 20;          // belote-rebelote : imprenable
-    const tot = [G.cardPts[0] + bel[0], G.cardPts[1] + bel[1]];
+    const ann = annPts();                                                   // annonces (une seule équipe marque)
+    const annAll = ann[0] + ann[1];
+    const tot = [G.cardPts[0] + bel[0] + ann[0], G.cardPts[1] + bel[1] + ann[1]];
     const gain = [0, 0];
     let verdict, handWinner = null, reserve = 0;
     const capot = G.tricksWon[0] === 8 ? 0 : G.tricksWon[1] === 8 ? 1 : null;
     if (capot !== null) {
-        gain[capot] = 252 + bel[capot]; gain[1 - capot] = bel[1 - capot];
+        gain[capot] = 252 + bel[capot] + annAll; gain[1 - capot] = bel[1 - capot];
         verdict = capot === T ? 'capot' : 'capot-def'; handWinner = capot;
     } else if (tot[T] > tot[D]) {
         gain[T] = tot[T]; gain[D] = tot[D]; verdict = 'ok'; handWinner = T;
     } else if (tot[T] < tot[D]) {
-        gain[D] = 162 + bel[D]; gain[T] = bel[T]; verdict = 'dedans'; handWinner = D;
+        gain[D] = 162 + bel[D] + annAll; gain[T] = bel[T]; verdict = 'dedans'; handWinner = D;   // les annonces vont à la défense
     } else {
         gain[D] = tot[D]; gain[T] = bel[T]; reserve = tot[T] - bel[T]; verdict = 'litige';
     }
@@ -586,12 +892,42 @@ function scoreHand() {
     const before = G.scores.slice();
     G.scores = [G.scores[0] + gain[0], G.scores[1] + gain[1]];
     G.lastWinnerTeam = handWinner;
-    return { T, D, bel, tot, gain, verdict, handWinner, reserve, patBefore, patWon, before, cardPts: G.cardPts.slice(), der: G.der, capot };
+    return { T, D, bel, ann, tot, gain, verdict, handWinner, reserve, patBefore, patWon, before, cardPts: G.cardPts.slice(), der: G.der, capot };
+}
+
+// Décompte de la coinche : points faits + contrat (la coinche multiplie la valeur du contrat)
+function scoreCoinche() {
+    const c = G.contract, T = team(G.taker), D = 1 - T, m = c.coinche || 1;
+    const total = handTotal();
+    const failBase = floor10(total);           // 160 pour 162 points (130 en SA à 130, 250 en TA à 258)
+    const capotBase = floor10(total) + 90;     // 250 pour 162 points
+    const bel = [0, 0];
+    if (G.belote.holder !== null) bel[team(G.belote.holder)] = 20;          // belote : toujours comptée
+    const ann = annPts(), annAll = ann[0] + ann[1];
+    const tot = [G.cardPts[0] + bel[0] + ann[0], G.cardPts[1] + bel[1] + ann[1]];
+    // pour réussir le contrat : avec ou sans les annonces (option)
+    const test = G.rules.annoncesContrat ? tot : [G.cardPts[0] + bel[0], G.cardPts[1] + bel[1]];
+    const gain = [0, 0];
+    let verdict, success;
+    if (c.capot) {                                                           // capot annoncé
+        success = G.tricksWon[T] === 8;
+        if (success) { gain[T] = 500 + bel[T] + annAll; gain[D] = bel[D]; verdict = 'capot-annonce'; }
+        else { gain[D] = 500 + bel[D] + annAll; gain[T] = bel[T]; verdict = 'capot-chute'; }
+    } else {
+        success = test[T] >= c.value && test[T] > test[D];                  // le contrat ET plus que la défense
+        if (success && G.tricksWon[T] === 8) { gain[T] = capotBase + c.value * m + bel[T] + annAll; gain[D] = bel[D]; verdict = 'capot'; }
+        else if (success) { gain[T] = tot[T] + c.value * m; gain[D] = tot[D]; verdict = 'ok'; }
+        else { gain[D] = failBase + c.value * m + bel[D] + annAll; gain[T] = bel[T]; verdict = 'chute'; }   // les annonces vont à la défense
+    }
+    const before = G.scores.slice();
+    G.scores = [G.scores[0] + gain[0], G.scores[1] + gain[1]];
+    G.lastWinnerTeam = success ? T : D;
+    return { T, D, bel, ann, tot, test, gain, verdict, success, mult: m, before, cardPts: G.cardPts.slice(), der: G.der, contract: c, total, failBase, capotBase };
 }
 
 function matchWinner() {
     const [a, b] = G.scores;
-    if ((a >= GOAL || b >= GOAL) && a !== b) return a > b ? 0 : 1;
+    if ((a >= G.goal || b >= G.goal) && a !== b) return a > b ? 0 : 1;
     return null;
 }
 
@@ -637,15 +973,25 @@ function render() {
     // Bandeau
     const lvl = ['Partie', 'Revanche', 'Belle'][G.level - 1];
     let sb = `<span class="sc t0">1/3 <b>${G.scores[0]}</b></span><span class="sc t1">2/4 <b>${G.scores[1]}</b></span>` +
-             `<span class="chip">${lvl} · ${GOAL}</span>`;
-    if (G.trump) sb += `<span class="chip">Atout <b class="${RED[G.trump] ? 'r' : ''}" style="color:${RED[G.trump] ? '#ff8a80' : '#fff'}">${SYM[G.trump]}</b> · J${G.taker + 1}</span>`;
+             `<span class="chip">${lvl} · ${G.goal}</span>`;
+    if (G.contract) sb += `<span class="chip">${valueTxt(G.contract)} <b style="color:${G.contract.type === 'suit' && RED[G.contract.suit] ? '#ff8a80' : '#fff'}">${contractShort(G.contract)}</b> · J${G.taker + 1}${G.contract.coinche > 1 ? ' · ×' + G.contract.coinche : ''}</span>`;
+    else if (G.trump) sb += `<span class="chip">Atout <b class="${RED[G.trump] ? 'r' : ''}" style="color:${RED[G.trump] ? '#ff8a80' : '#fff'}">${SYM[G.trump]}</b> · J${G.taker + 1}</span>`;
     if (G.pat) sb += `<span class="chip">Litige : ${G.pat}</span>`;
     $('scorebar').innerHTML = sb;
 
     // Pastille d'atout sur la table
+    $('game-title').textContent = G.game === 'coinche' ? 'Coinche' : 'Belote';
     const tb = $('trump-badge');
-    tb.hidden = !G.trump;
-    if (G.trump) {
+    const c = G.contract;
+    tb.hidden = !(G.trump || c);
+    if (c) {                                   // coinche : le contrat
+        tb.querySelector('.lbl').textContent = c.type === 'suit' ? 'Atout' : 'Contrat';
+        $('trump-sym').textContent = c.type === 'suit' ? SYM[c.suit] : c.type;
+        $('trump-sym').className = 'sym' + (c.type !== 'suit' ? ' txt' : RED[c.suit] ? ' red' : '');
+        $('trump-who').innerHTML = `${valueTxt(c)} · J${G.taker + 1}` +
+            (c.coinche > 1 ? `<br><span class="coin">${c.coinche === 4 ? 'Surcoinché ×4' : 'Coinché ×2'}</span>` : '');
+    } else if (G.trump) {                      // classique : l'atout
+        tb.querySelector('.lbl').textContent = 'Atout';
         $('trump-sym').textContent = SYM[G.trump];
         $('trump-sym').className = 'sym' + (RED[G.trump] ? ' red' : '');
         $('trump-who').textContent = `pris par J${G.taker + 1}`;
@@ -687,6 +1033,15 @@ function render() {
     if (G.turned && !G.trump) {
         tu.appendChild(cardEl(G.turned));
         tu.appendChild(Object.assign(document.createElement('div'), { textContent: 'Retournée' }));
+    }
+    if (G.game === 'coinche' && G.phase === 'bid') {
+        const b = G.currentBid;
+        const d = document.createElement('div');
+        d.className = 'bidnow';
+        d.innerHTML = b ? `${valueTxt(b)} <span style="color:${b.type === 'suit' && RED[b.suit] ? '#ff8a80' : '#fff'}">${contractShort(b)}</span>` +
+                          `<small>J${b.by + 1}${b.coinche > 1 ? ' · coinché' : ''}</small>`
+                        : `<small>Enchères</small>…`;
+        tu.appendChild(d);
     }
 
     // Message et boutons
@@ -856,6 +1211,120 @@ async function bidding() {
     return false;
 }
 
+// ---------------- Coinche : enchères ----------------
+const BID_VALUES = [80, 90, 100, 110, 120, 130, 140, 150, 160, 'capot'];
+
+// Panneau d'enchères du joueur humain : valeur (− / +), puis une couleur (ou SA / TA) ; Passer ; Coincher
+function askCoincheAction(p, cur) {
+    const allowed = cur ? (cur.capot ? [] : BID_VALUES.filter(v => v === 'capot' || v > cur.value)) : BID_VALUES.slice();
+    const canCoinche = !!cur && !cur.capot && team(cur.by) !== team(p);
+    setMsg(cur ? `Enchère : ${valueTxt(cur)} ${contractTxt(cur)} (J${cur.by + 1}${team(cur.by) === team(p) ? ', votre partenaire' : ''}). ` +
+                 `Choisissez une valeur puis une couleur pour monter${canCoinche ? ', coinchez' : ''} ou passez.`
+               : 'À vous d\'annoncer : choisissez une valeur puis une couleur (ou SA / TA), ou passez.');
+    return new Promise(resolve => {
+        const box = $('actions');
+        box.innerHTML = '';
+        const done = v => { box.innerHTML = ''; resolve(v); };
+        const mk = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+        if (allowed.length) {
+            let idx = 0;
+            const row1 = mk('div', 'bid-row');
+            const minus = mk('button', 'act alt bid-step', '−');
+            const val = mk('span', 'bid-val');
+            const plus = mk('button', 'act alt bid-step', '+');
+            const show = () => { val.textContent = allowed[idx] === 'capot' ? 'Capot' : allowed[idx]; minus.disabled = idx === 0; plus.disabled = idx === allowed.length - 1; };
+            minus.addEventListener('click', () => { if (idx > 0) idx--; show(); });
+            plus.addEventListener('click', () => { if (idx < allowed.length - 1) idx++; show(); });
+            row1.append(minus, val, plus);
+            const row2 = mk('div', 'bid-row');
+            for (const c of CONTRACTS) {
+                const lab = c.type === 'suit' ? `<span class="${RED[c.suit] ? 'r' : 'k'}">${SYM[c.suit]}</span>` : c.type;
+                const b = mk('button', 'act bid-suit', lab);
+                b.title = contractTxt(c);
+                b.addEventListener('click', () => {
+                    const v = allowed[idx];
+                    done({ kind: 'bid', value: v === 'capot' ? 250 : v, capot: v === 'capot', type: c.type, suit: c.suit });
+                });
+                row2.appendChild(b);
+            }
+            show();
+            box.append(row1, row2);
+        }
+        const row3 = mk('div', 'bid-row');
+        const pass = mk('button', 'act alt', 'Passer');
+        pass.addEventListener('click', () => done({ kind: 'pass' }));
+        row3.appendChild(pass);
+        if (canCoinche) {
+            const co = mk('button', 'act coinche', 'Coincher ×2');
+            co.addEventListener('click', () => done({ kind: 'coinche' }));
+            row3.appendChild(co);
+        }
+        box.appendChild(row3);
+        if (TEST && TEST.auto) done({ kind: 'pass' });
+    });
+}
+
+async function coincheBidding() {
+    const bids = [];
+    let cur = null, passes = 0, p = next(G.dealer);
+    for (;;) {
+        G.turnPlayer = p;
+        G.currentBid = cur;
+        render();
+        let a;
+        if (isHuman(p)) {
+            await ensureViewer(p);
+            a = await askCoincheAction(p, cur);
+        } else {
+            setMsg(`Joueur ${p + 1} réfléchit…`);
+            await sleep(speed());
+            a = (TEST && TEST.noTake) ? { kind: 'pass' } : aiCoincheAction(p, cur, bids);
+        }
+        a.by = p;
+        bids.push(a);
+        if (a.kind === 'pass') {
+            bubble(p, 'Passe');
+            passes++;
+            if ((cur && passes >= 3) || (!cur && passes >= 4)) break;   // 3 passes après une enchère, ou 4 passes
+        } else if (a.kind === 'bid') {
+            cur = { value: a.value, capot: a.capot, type: a.type, suit: a.suit, by: p, coinche: 1 };
+            passes = 0;
+            bubble(p, `${valueTxt(cur)} ${contractShort(cur)}`);
+            if (cur.capot) break;                                         // le capot met fin aux enchères
+        } else {                                                          // coinche : fin des enchères
+            cur.coinche = 2;
+            G.currentBid = cur;
+            bubble(p, 'Coinche !', 'belote');
+            await sleep(speed());
+            for (const q of [next(p), prev(p)]) {                         // l'équipe du preneur peut surcoincher
+                G.turnPlayer = q;
+                let yes;
+                if (isHuman(q)) {
+                    await ensureViewer(q);
+                    setMsg(`Joueur ${q + 1} : votre contrat ${valueTxt(cur)} ${contractTxt(cur)} est coinché. Surcoincher (×4) ?`);
+                    yes = await ask([{ label: 'Surcoincher ×4', value: true }, { label: 'Non', value: false, cls: 'alt' }]);
+                } else {
+                    await sleep(speed());
+                    yes = aiSurcoinche(q, cur);
+                }
+                if (yes) { cur.coinche = 4; bubble(q, 'Surcoinche !', 'belote'); break; }
+                bubble(q, 'Pas de surcoinche');
+            }
+            break;
+        }
+        await sleep(speed() * 0.5);
+        p = next(p);
+    }
+    G.currentBid = null;
+    G.turnPlayer = null;
+    if (!cur) return false;
+    G.contract = cur;
+    G.taker = cur.by;
+    G.mode = cur.type;
+    G.trump = cur.type === 'suit' ? cur.suit : null;
+    return true;
+}
+
 function askCard(p) {
     const legal = legalCards(p);
     let ctx = 'À vous de jouer';
@@ -928,7 +1397,8 @@ async function playTricks() {
         G.trickWinnerP = w.p;      // nom du gagnant en doré + bulle
         bubble(w.p, `Gagne le pli · ${pts} pts`, 'win');
         setMsg(`Joueur ${w.p + 1} (${TEAM[team(w.p)]}) remporte le pli avec ${cname(w.card)} : ${pts} points` +
-               (t === 7 ? ' (dont 10 de der).' : `. C'est à lui d'entamer le pli suivant.`));
+               (t === 7 ? ' (dont 10 de der).' : `. C'est à lui d'entamer le pli suivant.`) +
+               (t === 0 && G.annonces ? ' ' + annonceSummary() : ''));
         await trickPause();
         delete G.bubbles[w.p];
         G.trickWinnerP = null;
@@ -944,11 +1414,11 @@ function resultHTML(r) {
     const tn = x => `équipe ${TEAM[x]}`;
     let v, cls = '';
     switch (r.verdict) {
-        case 'capot': v = `Capot ! L'${tn(t)} (preneur) a fait tous les plis : elle marque 252 points${r.bel[t] ? ' + 20 de belote' : ''}.`; break;
+        case 'capot': v = `Capot ! L'${tn(t)} (preneur) a fait tous les plis : elle marque 252 points${r.bel[t] ? ' + 20 de belote' : ''}${r.ann[0] + r.ann[1] ? ` + ${r.ann[0] + r.ann[1]} d'annonces` : ''}.`; break;
         case 'capot-def': v = `Capot de la défense ! L'${tn(d)} a fait tous les plis : elle marque 252 points, le preneur est dedans.`; cls = 'bad'; break;
         case 'ok': v = `Contrat réussi : le preneur (${tn(t)}) a fait ${r.tot[t]} points contre ${r.tot[d]}, soit plus que la défense. Chaque équipe marque ses points.`; break;
         case 'dedans': v = `Dedans ! Le preneur (${tn(t)}) n'a fait que ${r.tot[t]} points contre ${r.tot[d]} : il fallait faire plus que la défense. ` +
-                           `La défense marque 162 points${r.bel[d] ? ' + 20 de belote' : ''}` + (r.bel[t] ? ' ; le preneur garde seulement sa belote (20, imprenable).' : ' ; le preneur ne marque rien.'); cls = 'bad'; break;
+                           `La défense marque 162 points${r.bel[d] ? ' + 20 de belote' : ''}${r.ann[0] + r.ann[1] ? ` + ${r.ann[0] + r.ann[1]} d'annonces` : ''}` + (r.bel[t] ? ' ; le preneur garde seulement sa belote (20, imprenable).' : ' ; le preneur ne marque rien.'); cls = 'bad'; break;
         case 'litige': v = `Litige : égalité ${r.tot[t]} à ${r.tot[d]}. La défense marque ses points ; les ${r.reserve} points du preneur sont mis en réserve et iront à l'équipe qui gagnera la prochaine donne.`; cls = 'mid'; break;
     }
     if (r.patWon) v += ` L'${tn(r.handWinner)} récupère aussi les ${r.patWon} points du litige précédent.`;
@@ -959,11 +1429,47 @@ function resultHTML(r) {
             <tr><td>Plis</td>${cell(G.tricksWon[0], G.tricksWon[1])}</tr>
             <tr><td>Cartes + 10 de der</td>${cell(r.cardPts[0], r.cardPts[1])}</tr>
             <tr><td>Belote-rebelote</td>${cell(r.bel[0] || '–', r.bel[1] || '–')}</tr>
+            ${G.rules.annonces ? `<tr><td>Annonces</td>${cell(r.ann[0] || '–', r.ann[1] || '–')}</tr>` : ''}
             <tr><td><b>Total de la donne</b></td>${cell('<b>' + r.tot[0] + '</b>', '<b>' + r.tot[1] + '</b>')}</tr>
             <tr><td>Marqué</td>${cell('+' + r.gain[0], '+' + r.gain[1])}</tr>
             <tr><td><b>Score</b></td>${cell(r.before[0] + ' → <b>' + G.scores[0] + '</b>', r.before[1] + ' → <b>' + G.scores[1] + '</b>')}</tr>
         </table>
-        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}</p>
+        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
+        <div class="verdict ${cls}">${v}</div>`;
+}
+
+function resultHTMLCoinche(r) {
+    const t = r.T, d = r.D, c = r.contract, val = c.value * r.mult;
+    const cell = (a, b) => `<td class="t0">${a}</td><td class="t1">${b}</td>`;
+    const tn = x => `équipe ${TEAM[x]}`;
+    const coin = r.mult === 4 ? ', <b>surcoinché ×4</b>' : r.mult === 2 ? ', <b>coinché ×2</b>' : '';
+    const ctr = `${valueTxt(c)} <span class="${c.type === 'suit' && RED[c.suit] ? 'r' : ''}">${contractTxt(c)}</span>`;
+    let v, cls = '';
+    switch (r.verdict) {
+        case 'ok': v = `Contrat réussi : l'${tn(t)} a fait ${r.tot[t]} points pour un contrat de ${c.value}${r.mult > 1 ? ` (×${r.mult} = ${val})` : ''}. ` +
+                       `Elle marque ${r.tot[t]} + ${val} = ${r.gain[t]} ; la défense marque ses ${r.tot[d]} points.`; break;
+        case 'chute': v = `Chuté ! L'${tn(t)} n'a fait que ${r.tot[t]} points pour un contrat de ${c.value}` +
+                          (r.tot[t] >= c.value ? ` : il fallait aussi faire plus que la défense (${r.tot[d]}).` : '.') +
+                          ` La défense marque ${r.failBase} + ${val} = ${r.failBase + val}${r.bel[d] ? ' + 20 de belote' : ''}${r.ann[0] + r.ann[1] ? ` + ${r.ann[0] + r.ann[1]} d'annonces` : ''}` +
+                          (r.bel[t] ? ' ; le preneur garde seulement sa belote (20).' : ' ; le preneur ne marque rien.'); cls = 'bad'; break;
+        case 'capot': v = `Capot ! L'${tn(t)} a fait tous les plis : elle marque ${r.capotBase} + ${val} = ${r.capotBase + val}${r.bel[t] ? ' + 20 de belote' : ''}.`; break;
+        case 'capot-annonce': v = `Capot annoncé et réussi : l'${tn(t)} marque 500 points${r.bel[t] ? ' + 20 de belote' : ''} !`; break;
+        case 'capot-chute': v = `Capot annoncé mais chuté : la défense marque 500 points${r.bel[d] ? ' + 20 de belote' : ''}.`; cls = 'bad'; break;
+    }
+    return `<h3>Fin de la donne</h3>
+        <p>Contrat : <b>${ctr}</b> par le joueur ${G.taker + 1} (${tn(t)})${coin}.<br>
+        <small>${c.capot ? 'Il fallait faire tous les plis.' : `Il fallait au moins ${c.value} points et plus que la défense${G.rules.annonces && !G.rules.annoncesContrat ? ' (annonces non comprises)' : ''}.`}</small></p>
+        <table>
+            <tr><th></th><th class="t0">1/3</th><th class="t1">2/4</th></tr>
+            <tr><td>Plis</td>${cell(G.tricksWon[0], G.tricksWon[1])}</tr>
+            <tr><td>Cartes + 10 de der</td>${cell(r.cardPts[0], r.cardPts[1])}</tr>
+            <tr><td>Belote-rebelote</td>${cell(r.bel[0] || '–', r.bel[1] || '–')}</tr>
+            ${G.rules.annonces ? `<tr><td>Annonces</td>${cell(r.ann[0] || '–', r.ann[1] || '–')}</tr>` : ''}
+            <tr><td><b>Total de la donne</b></td>${cell('<b>' + r.tot[0] + '</b>', '<b>' + r.tot[1] + '</b>')}</tr>
+            <tr><td>Marqué</td>${cell('+' + r.gain[0], '+' + r.gain[1])}</tr>
+            <tr><td><b>Score</b></td>${cell(r.before[0] + ' → <b>' + G.scores[0] + '</b>', r.before[1] + ' → <b>' + G.scores[1] + '</b>')}</tr>
+        </table>
+        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
         <div class="verdict ${cls}">${v}</div>`;
 }
 
@@ -977,17 +1483,27 @@ async function playHand() {
     render();
     await shuffleStep();
     await cutStep();
-    dealFirst();
-    hook('onDeal', G);
-    sortHands();
-    render();
-    G.phase = 'bid';
-    const taken = await bidding();
+    let taken;
+    if (G.game === 'coinche') {
+        dealAll();                    // 8 cartes chacun, pas de carte retournée
+        hook('onDeal', G);
+        sortHands();
+        G.phase = 'bid';
+        render();
+        taken = await coincheBidding();
+    } else {
+        dealFirst();                  // 5 cartes chacun + la retournée
+        hook('onDeal', G);
+        sortHands();
+        G.phase = 'bid';
+        render();
+        taken = await bidding();
+    }
     if (!taken) {
         G.turnPlayer = null;
         setMsg('Personne ne prend : on ramasse les cartes et la donne passe au joueur suivant.');
         await sleep(1800);
-        collectNoTake();
+        if (G.game === 'coinche') collectHandsInOrder(); else collectNoTake();
         G.lastWinnerTeam = null;
         G.turned = null;
         hook('onHand', null, G);
@@ -995,18 +1511,22 @@ async function playHand() {
     }
     await sleep(speed());
     G.bubbles = {};
-    dealRest();
+    if (G.game !== 'coinche') dealRest();
     sortHands();
     detectBelote();
+    G.annonces = null;
+    if (G.rules.annonces) resolveAnnonces();   // annonces de chaque joueur (révélées au premier pli)
+    initAI();                         // l'ordinateur repart de zéro (le contrat est connu)
     G.phase = 'play';
     defaultViewer();
     render();
     await playTricks();
-    const res = scoreHand();
+    const res = G.game === 'coinche' ? scoreCoinche() : scoreHand();
     hook('onHand', res, G);
     G.phase = 'result';
     render();
-    await modal(resultHTML(res), [{ label: 'Donne suivante', value: 1 }, { label: 'Voir les plis', sec: true, action: showTricks }]);
+    await modal(G.game === 'coinche' ? resultHTMLCoinche(res) : resultHTML(res),
+                [{ label: 'Donne suivante', value: 1 }, { label: 'Voir les plis', sec: true, action: showTricks }]);
     collectAfterPlay();
 }
 
@@ -1062,27 +1582,45 @@ function showTricks() {
 }
 
 function showRules() {
-    modal(`<h3>Règles de la belote</h3>
+    const co = G.game === 'coinche';
+    modal(`<h3>Règles : ${GAME_NAME[G.game]}</h3>
     <h4>Cartes et points</h4>
     <ul><li><b>Atout</b> : Valet 20, 9 14, As 11, 10 10, Roi 4, Dame 3, 8 et 7 : 0.</li>
-        <li><b>Hors atout</b> : As 11, 10 10, Roi 4, Dame 3, Valet 2, 9-8-7 : 0.</li>
-        <li>Total 152 + <b>10 de der</b> (dernier pli) = 162 points.</li></ul>
-    <h4>Distribution et annonces</h4>
+        <li><b>Hors atout</b> : As 11, 10 10, Roi 4, Dame 3, Valet 2, 9-8-7 : 0.</li>` +
+    `<li>Total 152 + <b>10 de der</b> (dernier pli) = 162 points.</li></ul>` +
+    (co ? `<h4>Sans atout et tout atout : ${variant().name}</h4><p style="font-size:14px">${sataHTML(G.rules.saTa)}<br>
+        Ordre en SA : As, 10, Roi, Dame, Valet, 9, 8, 7. Ordre en TA : Valet, 9, As, 10, Roi, Dame, 8, 7.</p>` : '') +
+    `<h4>Annonces</h4><p style="font-size:14px">${annHTML(G.rules, G.game, false)}${G.rules.annonces ? '<br>Elles sont déclarées automatiquement au premier pli.' : ''}</p>` +
+    (co ? `<h4>Distribution et enchères</h4>
+    <ul><li>8 cartes à chacun (3, 2, 3), aucune carte retournée.</li>
+        <li>Chacun à son tour passe ou annonce un contrat plus haut : de <b>80 à 160</b> (de 10 en 10) ou <b>capot</b>, à ♥ ♠ ♦ ♣, <b>SA</b> (sans atout) ou <b>TA</b> (tout atout).</li>
+        <li>Les enchères s'arrêtent après 3 passes, sur un capot, ou sur une <b>coinche</b> : un adversaire du dernier enchérisseur parie qu'il chutera (contrat ×2). L'équipe du preneur peut alors <b>surcoincher</b> (×4). Le capot ne se coinche pas.</li>
+        <li>Si les 4 joueurs passent, on redistribue.</li></ul>`
+        : `<h4>Distribution et prise</h4>
     <ul><li>Le donneur distribue 3 puis 2 cartes à chacun et retourne la 21e.</li>
         <li>1er tour : chacun peut <b>prendre</b> à la couleur retournée. 2e tour : chacun peut choisir une <b>autre</b> couleur. Si personne ne prend, on redistribue.</li>
-        <li>Le preneur reçoit la carte retournée + 2 cartes, les autres 3 cartes.</li></ul>
-    <h4>Le jeu de la carte</h4>
+        <li>Le preneur reçoit la carte retournée + 2 cartes, les autres 3 cartes.</li></ul>`) +
+    `<h4>Le jeu de la carte</h4>
     <ul><li>On doit <b>fournir</b> la couleur demandée.</li>
         <li>Sans la couleur : si le <b>partenaire est maître</b>, on peut se défausser librement ; sinon on doit <b>couper</b> (jouer atout).</li>
         <li>Si un adversaire a déjà coupé : il faut <b>surcouper</b> si on peut, sinon <b>sous-couper</b> (jouer un atout plus petit).</li>
         <li>Quand l'<b>atout est demandé</b>, ou dès qu'on joue atout, il faut <b>monter</b> au-dessus du plus fort atout du pli si on le peut (même sur son partenaire).</li>
-        <li>Sans couleur ni atout : on joue n'importe quelle carte.</li></ul>
-    <h4>Décompte</h4>
-    <ul><li><b>Belote-rebelote</b> (Roi + Dame d'atout dans la même main) : 20 points, toujours gardés.</li>
+        <li>Sans couleur ni atout : on joue n'importe quelle carte.</li>` +
+    (co ? `<li><b>Sans atout</b> : on fournit, sans obligation de monter ; sans la couleur, on joue ce qu'on veut.</li>
+        <li><b>Tout atout</b> : on fournit et on doit toujours <b>monter</b> dans la couleur demandée si on peut.</li>` : '') +
+    `</ul><h4>Décompte</h4>` +
+    (co ? `<ul><li>Pour réussir, l'équipe du preneur doit faire <b>au moins son contrat et plus que la défense</b> (82 pour un contrat de 80). La belote compte.</li>
+        <li><b>Réussi</b> : elle marque ses points + la valeur du contrat ; la défense marque ses points.</li>
+        <li><b>Chuté</b> : la défense marque 160 + le contrat (en SA/TA : selon les valeurs choisies, voir plus haut) ; le preneur ne garde que sa belote.</li>
+        <li><b>Coinche</b> : la valeur du contrat est doublée (×4 si surcoinché).</li>
+        <li><b>Capot</b> non annoncé : 250 + le contrat (à la couleur). <b>Capot annoncé</b> : 500 s'il est réussi, 500 pour la défense sinon.</li>
+        <li><b>Belote-rebelote</b> (Roi + Dame d'atout) : 20 points, toujours gardés ; pas de belote en SA ni en TA.</li>
+        <li>La partie se joue en <b>${G.goal} points</b>, puis revanche et belle éventuelle.</li></ul>`
+        : `<ul><li><b>Belote-rebelote</b> (Roi + Dame d'atout dans la même main) : 20 points, toujours gardés.</li>
         <li>Le preneur doit faire <b>plus de points que la défense</b> (belote comprise). Sinon il est <b>dedans</b> : la défense marque 162.</li>
         <li><b>Égalité</b> : litige, les points du preneur sont mis en réserve pour l'équipe qui gagnera la donne suivante.</li>
         <li><b>Capot</b> (tous les plis) : 252 points.</li>
-        <li>La partie se joue en <b>${GOAL} points</b>, puis revanche et belle éventuelle.</li></ul>`,
+        <li>La partie se joue en <b>${G.goal} points</b>, puis revanche et belle éventuelle.</li></ul>`),
     [{ label: 'Fermer', value: 1 }], 2);
 }
 
@@ -1124,11 +1662,93 @@ $('hand').addEventListener('click', onHandClick);
 $('btn-tricks').addEventListener('click', showTricks);
 $('btn-rules').addEventListener('click', showRules);
 $('btn-options').addEventListener('click', showOptions);
+$('btn-menu').addEventListener('click', () => {
+    if (confirm('Revenir au menu ? La donne en cours sera perdue, mais le score est conservé (bouton « Reprendre »).')) location.reload();
+});
 
 // Accès pour les tests automatiques
-window.belote = { G, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT };
+window.belote = { G, askCoincheAction, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT,
+                  findAnnonces, cmpAnnonce, resolveAnnonces, scoreCoinche, handTotal, VARIANTS, annonceSummary };
 
-main();
+// ---------------- Écran de départ ----------------
+function resetMatch(game, goal, rules) {
+    Object.assign(G, { scores: [0, 0], pat: 0, level: 1, firstWinner: null, dealer: 2, lastWinnerTeam: null,
+                       firstHand: true, deck: makeDeck(), game, goal, rules: Object.assign({}, DEFAULT_RULES, rules || {}) });
+}
+
+const RNAME = { A: 'As', '10': '10', R: 'Roi', D: 'Dame', V: 'Valet', '9': '9', '8': '8', '7': '7' };
+const fmtVals = (table, order) => order.filter(r => table[r]).map(r => `${RNAME[r]} ${table[r]}`).join(' · ');
+const tableTotal = t => 4 * Object.values(t).reduce((a, b) => a + b, 0) + 10;
+
+// Texte des valeurs SA / TA d'une variante (écran de départ et règles)
+function sataHTML(key) {
+    const v = VARIANTS[key] || VARIANTS.officiel;
+    const sa = tableTotal(v.SA), ta = tableTotal(v.TA);
+    return `<b>Sans atout</b> : ${fmtVals(v.SA, RANKS)} — total ${sa}<br>` +
+           `<b>Tout atout</b> : ${fmtVals(v.TA, TRUMP_ORDER)} — total ${ta}<br>` +
+           `À la couleur (♥ ♠ ♦ ♣) : valeurs de la belote, total 162.<br>` +
+           `Contrat chuté : la défense marque ${floor10(sa)} + contrat en SA, ${floor10(ta)} + contrat en TA (160 + contrat à la couleur). ` +
+           `Capot non annoncé : ${floor10(sa) + 90} en SA, ${floor10(ta) + 90} en TA (250 à la couleur), + contrat.`;
+}
+
+// Texte des annonces (écran de départ et règles)
+function annHTML(rules, game, withCheckbox) {
+    if (!rules.annonces) return 'Seule la belote-rebelote (Roi + Dame d\'atout, 20 points) est comptée.';
+    return `<b>Suites</b> (même couleur, ordre 7 8 9 10 V D R A) : tierce 20 · cinquante 50 · cent 100 (5 cartes et plus)<br>` +
+           `<b>Carrés</b> : valets 200 · neuf 150 · as, dix, rois, dames 100 (7 et 8 : rien)` +
+           (game === 'coinche' ? `<br><b>Carrés en sans atout</b> : as 200 · dix 150 · rois, dames, valets 100 (9, 8, 7 : rien)` : '') +
+           `<br>Seule l'équipe qui a la plus forte annonce marque, avec celles de son partenaire. Égalité : la plus haute carte, puis l'annonce à l'atout, sinon personne. ` +
+           `Si le preneur chute, ses annonces vont à la défense.` +
+           (game === 'coinche' ? (withCheckbox
+               ? `<label><input type="checkbox" id="ann-contrat" ${rules.annoncesContrat ? 'checked' : ''}> Les annonces comptent pour réussir le contrat</label>`
+               : `<br>Les annonces ${rules.annoncesContrat ? 'comptent' : 'ne comptent pas'} pour réussir le contrat.`) : '');
+}
+
+function showStart() {
+    const st = $('start');
+    const sv = loadJSON('belote_match', null);
+    let game = OPT.game in GAME_NAME ? OPT.game : 'classique';
+    const goals = Object.assign({ classique: 1000, coinche: 1500 }, OPT.goals || {});
+    let goal = goals[game];
+    const rules = Object.assign({}, DEFAULT_RULES, OPT.rules || {});
+    const refresh = () => {
+        st.querySelectorAll('.game-card').forEach(b => b.classList.toggle('sel', b.dataset.game === game));
+        st.querySelectorAll('.goal-btn').forEach(b => b.classList.toggle('sel', +b.dataset.goal === goal));
+        $('sata-block').hidden = game !== 'coinche';
+        st.querySelectorAll('[data-sata]').forEach(b => b.classList.toggle('sel', b.dataset.sata === rules.saTa));
+        $('sata-vals').innerHTML = sataHTML(rules.saTa);
+        st.querySelectorAll('[data-ann]').forEach(b => b.classList.toggle('sel', (b.dataset.ann === '1') === rules.annonces));
+        $('ann-vals').innerHTML = annHTML(rules, game, true);
+    };
+    st.querySelectorAll('.game-card').forEach(b => b.addEventListener('click', () => { game = b.dataset.game; goal = goals[game]; refresh(); }));
+    st.querySelectorAll('.goal-btn').forEach(b => b.addEventListener('click', () => { goal = +b.dataset.goal; goals[game] = goal; refresh(); }));
+    st.querySelectorAll('[data-sata]').forEach(b => b.addEventListener('click', () => { rules.saTa = b.dataset.sata; refresh(); }));
+    st.querySelectorAll('[data-ann]').forEach(b => b.addEventListener('click', () => { rules.annonces = b.dataset.ann === '1'; refresh(); }));
+    $('ann-vals').addEventListener('change', e => { if (e.target.id === 'ann-contrat') rules.annoncesContrat = e.target.checked; });
+    const resume = $('btn-resume');
+    if (sv && Array.isArray(sv.scores) && (sv.scores[0] || sv.scores[1] || sv.level > 1)) {
+        resume.hidden = false;
+        resume.textContent = `Reprendre : ${GAME_NAME[sv.game] || GAME_NAME.classique}${sv.rules && sv.rules.annonces ? ' avec annonces' : ''} · 1/3 ${sv.scores[0]} – 2/4 ${sv.scores[1]}`;
+        resume.addEventListener('click', () => { st.hidden = true; main(); });
+    }
+    $('btn-start').addEventListener('click', () => {
+        OPT = Object.assign({}, OPT, { game, goals, rules: Object.assign({}, rules) });
+        saveJSON('belote_options', OPT);
+        resetMatch(game, goal, rules);
+        saveMatch();
+        st.hidden = true;
+        main();
+    });
+    refresh();
+    st.hidden = false;
+}
+
+if (TEST && !TEST.showStart) {      // tests automatiques : pas d'écran de départ
+    resetMatch(TEST.game || 'classique', TEST.goal || (TEST.game === 'coinche' ? 1500 : 1000), TEST.rules);
+    main();
+} else {
+    showStart();
+}
 </script>
 </body>
 </html>
