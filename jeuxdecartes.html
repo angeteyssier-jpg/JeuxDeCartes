@@ -292,7 +292,12 @@
              color: rgba(255,255,255,0.45); font-size: calc(var(--scw) * 0.42); font-weight: 800; }
     .sslot.stock { cursor: pointer; }
     .sslot.hint { border-color: #ffd54f; border-style: solid; color: #ffd54f; }
-    #sol-foot { flex-shrink: 0; min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 4px 10px 8px; }
+    #sol-foot { flex-shrink: 0; min-height: 44px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 8px; padding: 4px 10px 8px; }
+    #sol-lost { width: 100%; display: flex; gap: 8px; justify-content: center; }
+    #sol-lost[hidden] { display: none; }
+    #sol-lost button { border: none; border-radius: 10px; padding: 8px 12px; font-weight: 700; font-size: 14px; background: #fff; color: #0b5d2b; }
+    #sol-lost button#sol-back { background: #ffd54f; color: #222; }
+    #sol-lost button[hidden] { display: none; }
     #sol-msg { flex: 1; font-size: 14px; line-height: 1.3; text-align: center; }
     #sol-msg.err { color: #ffe082; }
     #sol-finish { background: #ffd54f; color: #222; border: none; border-radius: 10px; padding: 9px 14px; font-weight: 800; font-size: 15px; }
@@ -375,7 +380,8 @@
         <button class="top-btn" id="sol-rules" title="Règles">?</button>
     </header>
     <div id="sol-board"></div>
-    <div id="sol-foot"><div id="sol-msg"></div><button id="sol-finish" hidden>Terminer ▸</button></div>
+    <div id="sol-foot"><div id="sol-msg"></div><button id="sol-finish" hidden>Terminer ▸</button>
+        <div id="sol-lost" hidden><button id="sol-back" hidden></button><button id="sol-new2">Nouvelle donne</button></div></div>
 </div>
 <div id="quit" hidden>
     <h1>À bientôt !</h1>
@@ -389,7 +395,7 @@
 
 <script>
 'use strict';
-const VERSION = '2.0';            // à reporter dans jeuxdecartes-todo.md à chaque livraison
+const VERSION = '2.1';            // à reporter dans jeuxdecartes-todo.md à chaque livraison
 /* =====================================================================
    BELOTE — d'après l'ancien programme Turbo Pascal BELOTE.PAS
    Joueurs 1 à 4 (internes 0 à 3), équipes 1/3 et 2/4, jeu dans le sens
@@ -2056,7 +2062,7 @@ function solUndo() {
     if (!SOL.undo.length || SOL.busy) return false;
     solRestore(SOL.undo.pop());
     SOL.won = false;
-    solSave(); solRender();
+    solSave(); solRender(); solCheck();
     return true;
 }
 
@@ -2068,6 +2074,7 @@ function solAfter() {
     if (!SOL.started) { SOL.started = true; solStat(st => { st.played++; }); }
     solSave(); solRender();
     if (solFoundCount() === 52 && !SOL.won) solWin();
+    else if (!SOL.busy) solCheck();
 }
 
 // Coup automatique quand on touche une carte : fondation d'abord, sinon la meilleure colonne
@@ -2258,6 +2265,7 @@ async function solFinish() {
         await solWait(110);
     }
     SOL.busy = false;
+    if (!SOL.won) solCheck();
 }
 
 async function solWin() {
@@ -2277,6 +2285,251 @@ async function solWin() {
         [{ label: 'Nouvelle donne', value: 'new' }, { label: 'Écran de départ', value: 'home', sec: true }], 2);
     if (v === 'new') solStartNew();
     else location.reload();
+}
+
+// --- Vérificateur : cherche s'il existe encore une suite de coups gagnante (cartes cachées comprises) ---
+// Cartes codées 0..51 : couleur (0 ♥, 1 ♠, 2 ♦, 3 ♣) × 13 + (valeur - 1)
+const SV = (() => {
+    const suitOf = id => (id / 13) | 0, rankOf = id => (id % 13) + 1;
+    const redOf = id => suitOf(id) % 2 === 0;
+    const fits = (c, top) => redOf(c) !== redOf(top) && rankOf(c) === rankOf(top) - 1;
+    const chr = id => String.fromCharCode(48 + id);
+    const enc = a => { let s = ''; for (const x of a) s += chr(x); return s; };
+
+    function clone(S) {
+        return { h: S.h.map(a => a.slice()), u: S.u.map(a => a.slice()), f: S.f.slice(), t: S.t.slice(), p: S.p, need: S.need };
+    }
+    function key(S, draw) {
+        const cols = [];
+        for (let i = 0; i < 7; i++) cols.push(enc(S.h[i]) + '/' + enc(S.u[i]));
+        cols.sort();
+        // la colonne « à compléter » (coup lié en attente) fait partie de l'état
+        const nd = S.need ? enc(S.h[S.need.col]) + '/' + enc(S.u[S.need.col]) + S.need.kind : '';
+        return S.f.join(',') + '|' + cols.join(';') + '|' + (draw === 1 ? enc(S.t) : enc(S.t) + '@' + S.p) + '|' + nd;
+    }
+    const access = (S, draw) => (draw === 1 ? S.t : (S.p > 0 ? [S.t[S.p - 1]] : []));
+    const canF = (S, c) => S.f[suitOf(c)] === rankOf(c) - 1;
+    function safe(S, c) {                                   // inutile de garder cette carte sur la table
+        const r = rankOf(c);
+        if (r <= 2) return true;
+        const o = redOf(c) ? [1, 3] : [0, 2];
+        return S.f[o[0]] >= r - 1 && S.f[o[1]] >= r - 1;
+    }
+    function flip(S, i) { if (!S.u[i].length && S.h[i].length) S.u[i].push(S.h[i].pop()); }
+    function takeTalon(S, c, draw) {
+        const k = S.t.indexOf(c);
+        S.t.splice(k, 1);
+        if (draw === 3) S.p--;
+    }
+    function apply(S0, m, draw) {
+        const S = clone(S0);
+        switch (m.t) {
+            case 'cf': S.u[m.i].pop(); S.f[suitOf(m.c)]++; flip(S, m.i); break;
+            case 'tf': takeTalon(S, m.c, draw); S.f[suitOf(m.c)]++; break;
+            case 'cc': { const run = S.u[m.i].splice(m.k); S.u[m.j].push(...run); flip(S, m.i); break; }
+            case 'tc': takeTalon(S, m.c, draw); S.u[m.j].push(m.c); break;
+            case 'fc': S.f[m.s]--; S.u[m.j].push(m.c); break;
+            case 'draw': S.p = S.p >= S.t.length ? 0 : Math.min(S.p + 3, S.t.length); break;
+        }
+        return S;
+    }
+    function autoSafe(S, draw) {                             // coups sûrs vers les fondations, joués d'office
+        const done = [];
+        for (let again = true; again;) {
+            again = false;
+            for (let i = 0; i < 7; i++) {
+                if (S.need && S.need.kind === 'fc' && S.need.col === i) continue;   // carte descendue exprès : on la laisse
+                const u = S.u[i], c = u[u.length - 1];
+                if (c !== undefined && canF(S, c) && safe(S, c)) {
+                    u.pop(); S.f[suitOf(c)]++; flip(S, i); done.push({ t: 'cf', i, c }); again = true;
+                    if (S.need && S.need.col === i) S.need = null;                    // la carte découverte a servi
+                }
+            }
+            if (draw !== 1) continue;
+            for (const c of access(S, draw).slice()) {
+                if (canF(S, c) && safe(S, c)) { takeTalon(S, c, draw); S.f[suitOf(c)]++; done.push({ t: 'tf', c }); again = true; break; }
+            }
+        }
+        return done;
+    }
+    const isWin = S => S.t.length === 0 && S.h.every(h => !h.length) && !S.need;   // tout est visible : la fin est assurée
+    // Coups possibles. Avec « prune », deux coups ne sont permis que s'ils servent tout de suite :
+    //  - redescendre une carte d'une fondation : le coup suivant doit poser une carte dessus ;
+    //  - couper une suite (la carte du dessous reste visible) : le coup suivant doit utiliser cette colonne.
+    function gen(S, draw, prune) {
+        const mv = [];
+        const firstEmpty = S.u.findIndex((u, j) => !u.length && !S.h[j].length);
+        const acc = access(S, draw);
+        const nd = prune ? S.need : null;
+        const okDst = j => !nd || nd.col === j;
+        const okSrc = i => !nd || (nd.kind === 'split' && nd.col === i);
+        for (let i = 0; i < 7; i++) { const u = S.u[i], c = u[u.length - 1]; if (c !== undefined && canF(S, c) && okSrc(i) && !(nd && nd.kind === 'fc')) mv.push({ t: 'cf', i, c, pr: 0 }); }
+        if (!nd) for (const c of acc) if (canF(S, c)) mv.push({ t: 'tf', c, pr: 0 });
+        for (let i = 0; i < 7; i++) {
+            const u = S.u[i];
+            for (let k = 0; k < u.length; k++) {
+                const c = u[k], reveal = k === 0 && S.h[i].length > 0;
+                for (let j = 0; j < 7; j++) {
+                    if (j === i || !(okDst(j) || okSrc(i))) continue;
+                    if (nd && nd.kind === 'fc' && nd.col !== j) continue;
+                    const uj = S.u[j];
+                    if (uj.length) { if (fits(c, uj[uj.length - 1])) mv.push({ t: 'cc', i, k, j, pr: reveal ? 1 : 3 }); }
+                    else if (j === firstEmpty && rankOf(c) === 13 && (k > 0 || S.h[i].length)) mv.push({ t: 'cc', i, k, j, pr: reveal ? 1 : 3 });
+                }
+            }
+        }
+        for (const c of acc) for (let j = 0; j < 7; j++) {
+            if (!okDst(j)) continue;
+            const uj = S.u[j];
+            if (uj.length ? fits(c, uj[uj.length - 1]) : (j === firstEmpty && rankOf(c) === 13)) mv.push({ t: 'tc', c, j, pr: 2 });
+        }
+        for (let s = 0; s < 4; s++) if (S.f[s] > 1) {
+            const c = s * 13 + S.f[s] - 1;
+            for (let j = 0; j < 7; j++) {
+                if (!okDst(j)) continue;
+                const uj = S.u[j];
+                if (uj.length ? fits(c, uj[uj.length - 1]) : (j === firstEmpty && rankOf(c) === 13)) mv.push({ t: 'fc', s, c, j, pr: 5 });
+            }
+        }
+        if (draw === 3 && S.t.length && !nd) mv.push({ t: 'draw', pr: 2.5 });
+        mv.sort((a, b) => a.pr - b.pr);
+        return mv;
+    }
+    // Pose ou lève la contrainte « coup lié » après un coup
+    function setNeed(S, m, prune) {
+        if (!prune) { S.need = null; return; }
+        const touched = m.t === 'cf' || m.t === 'cc' ? [m.i, m.j] : [m.j];
+        if (S.need && touched.includes(S.need.col)) S.need = null;
+        if (m.t === 'fc') S.need = { col: m.j, kind: 'fc' };
+        else if (m.t === 'cc' && m.k > 0) S.need = { col: m.i, kind: 'split' };
+    }
+
+    // Recherche en profondeur, par tranches (pour ne pas bloquer l'écran)
+    function create(S0, draw, maxNodes = 200000, opts = {}) {
+        const auto = opts.auto !== false, prune = opts.prune !== false;
+        const job = { status: 'running', nodes: 0, path: null };
+        const root = clone(S0);
+        root.need = null;
+        const auto0 = auto ? autoSafe(root, draw) : [];
+        const seen = new Set();
+        const stack = [];
+        const finishWin = () => {
+            job.status = 'win';
+            job.path = [];
+            for (const e of stack) { if (e.via) job.path.push(e.via); job.path.push(...e.auto); }
+        };
+        stack.push({ S: root, auto: auto0, via: null, moves: null, i: 0 });
+        if (isWin(root)) finishWin();
+        else seen.add(key(root, draw));
+        job.step = deadline => {
+            while (job.status === 'running') {
+                if (!stack.length) { job.status = 'lose'; break; }
+                if (job.nodes >= maxNodes) { job.status = 'unknown'; break; }
+                if ((job.nodes & 255) === 0 && performance.now() > deadline) break;
+                const top = stack[stack.length - 1];
+                if (!top.moves) top.moves = gen(top.S, draw, prune);
+                if (top.i >= top.moves.length) { stack.pop(); top.S = null; continue; }
+                const m = top.moves[top.i++];
+                const S2 = apply(top.S, m, draw);
+                setNeed(S2, m, prune);
+                const au = auto ? autoSafe(S2, draw) : [];
+                if (isWin(S2)) { stack.push({ S: S2, auto: au, via: m, moves: [], i: 0 }); finishWin(); break; }
+                const k = key(S2, draw);
+                if (seen.has(k)) continue;
+                seen.add(k);
+                job.nodes++;
+                stack.push({ S: S2, auto: au, via: m, moves: null, i: 0 });
+            }
+            if (job.status !== 'running') seen.clear();
+            return job.status;
+        };
+        return job;
+    }
+    return { create, suitOf, rankOf };
+})();
+
+// État du jeu → état du vérificateur (et correspondance des fondations)
+function svFromGame(G = SOL) {
+    const enc = c => SUITS.indexOf(c.s) * 13 + SRANKS.indexOf(c.r);
+    const S = { h: [], u: [], f: [0, 0, 0, 0], t: [], p: 0 };
+    G.tab.forEach(col => { S.h.push(col.filter(c => !c.up).map(enc)); S.u.push(col.filter(c => c.up).map(enc)); });
+    G.found.forEach(f => { if (f.length) S.f[SUITS.indexOf(f[0].s)] = f.length; });
+    if (SOL.draw === 1) S.t = [...G.stock, ...G.waste].map(enc).sort((a, b) => a - b);
+    else { S.t = [...G.waste.map(enc), ...G.stock.slice().reverse().map(enc)]; S.p = G.waste.length; }
+    return S;
+}
+// Un coup du vérificateur → un coup du jeu (avec la situation actuelle)
+function svToGame(m) {
+    const card = id => ({ r: SRANKS[id % 13], s: SUITS[(id / 13) | 0] });
+    const slotOf = s => { const i = SOL.found.findIndex(f => f.length && f[0].s === SUITS[s]); return i >= 0 ? i : SOL.found.findIndex(f => !f.length); };
+    const hidden = i => SOL.tab[i].filter(c => !c.up).length;
+    const onTop = id => { const w = SOL.waste[SOL.waste.length - 1]; return w && w.id === card(id).r + card(id).s; };
+    switch (m.t) {
+        case 'cf': return { src: { from: 'tab', i: m.i, k: SOL.tab[m.i].length - 1 }, dst: { to: 'found', i: slotOf(VS(m.c)) } };
+        case 'tf': return onTop(m.c) ? { src: { from: 'waste' }, dst: { to: 'found', i: slotOf(VS(m.c)) } } : { drawTo: card(m.c), dst: { to: 'found' } };
+        case 'cc': return { src: { from: 'tab', i: m.i, k: hidden(m.i) + m.k }, dst: { to: 'tab', i: m.j } };
+        case 'tc': return onTop(m.c) ? { src: { from: 'waste' }, dst: { to: 'tab', i: m.j } } : { drawTo: card(m.c), dst: { to: 'tab', i: m.j } };
+        case 'fc': return { src: { from: 'found', i: slotOf(m.s) }, dst: { to: 'tab', i: m.j } };
+        default: return { draw: true };
+    }
+}
+const VS = id => (id / 13) | 0;
+
+// --- Vérification en tâche de fond après chaque coup ---
+const SOLV = { gen: 0, status: null, path: null, back: null };
+const solYield = () => new Promise(r => setTimeout(r, 0));
+async function solRunJob(job, gen, maxMs) {
+    const t0 = Date.now();
+    let r;
+    while ((r = job.step(performance.now() + 14)) === 'running') {
+        await solYield();
+        if (gen !== SOLV.gen || HALTED || !SOL.active) return null;
+        if (Date.now() - t0 > maxMs) return 'unknown';
+    }
+    return r;
+}
+async function solCheck() {
+    const gen = ++SOLV.gen;
+    Object.assign(SOLV, { status: 'running', path: null, back: null });
+    $('sol-lost').hidden = true;
+    if (TEST && !TEST.solCheck) { SOLV.status = 'unknown'; return; }
+    if (SOL.won || solCanFinish()) { SOLV.status = 'win'; SOLV.path = []; return; }
+    await new Promise(r => setTimeout(r, TEST && !TEST.realtime ? 0 : 120));   // on laisse l'écran se mettre à jour
+    if (gen !== SOLV.gen) return;
+    const job = SV.create(svFromGame(), SOL.draw, 150000);
+    const r = await solRunJob(job, gen, 8000);
+    if (r === null) return;
+    SOLV.status = r; SOLV.path = job.path;
+    if (r === 'lose') solLost(gen);
+}
+async function solLost(gen) {
+    solMsg(SOL.moves === 0 ? 'Cette donne ne peut pas se gagner, même en jouant parfaitement : prends-en une autre.'
+                           : 'Il n\'y a plus moyen de gagner cette donne : j\'ai essayé toutes les suites de coups possibles.', true);
+    $('sol-lost').hidden = false;
+    $('sol-back').hidden = true;
+    // Jusqu'où faut-il revenir pour que ce soit encore gagnable ?
+    for (let k = 1; k <= Math.min(SOL.undo.length, 80); k++) {
+        const job = SV.create(svFromGame(JSON.parse(SOL.undo[SOL.undo.length - k])), SOL.draw, 60000);
+        const r = await solRunJob(job, gen, 3000);
+        if (r === null) return;
+        if (r === 'win') {
+            SOLV.back = k;
+            const b = $('sol-back');
+            b.textContent = `↶ Revenir ${coups(k)} en arrière`;
+            b.hidden = false;
+            solMsg(`Il n'y a plus moyen de gagner cette donne. En revenant ${coups(k)} en arrière, c'était encore gagnable.`, true);
+            return;
+        }
+        if (r === 'unknown') return;
+    }
+}
+function solGoBack() {
+    const k = SOLV.back;
+    if (!k) return;
+    for (let i = 0; i < k; i++) { solRestore(SOL.undo.pop()); }
+    SOL.won = false;
+    solSave(); solRender(); solCheck();
+    solMsg(`Retour ${coups(k)} en arrière : c'est de nouveau gagnable. Le 💡 peut t'aider à trouver la bonne suite.`);
 }
 
 // --- Démarrage, menu, règles ---
@@ -2299,6 +2552,7 @@ function solStart(opts) {
     requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
     solMsg(sv ? 'Réussite reprise.' : 'Touche une carte pour la jouer, ou fais-la glisser. Touche la pioche (en haut à gauche) pour retourner des cartes.');
     if (!solTimer) solTimer = setInterval(solTick, 1000);
+    solCheck();
 }
 function solTick() {
     if (!SOL.active || SOL.won || !SOL.started || document.hidden || HALTED) return;
@@ -2313,16 +2567,36 @@ function solStartNew() {
     requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
     solSave();
     solMsg('Nouvelle donne : bonne réussite !');
+    solCheck();
 }
 function solReplay() {
     solRestore(SOL.initial);
     Object.assign(SOL, { moves: 0, elapsed: 0, started: false, won: false, undo: [] });
     solSave(); solRender();
     solMsg('Même donne, on recommence depuis le début.');
+    solCheck();
 }
 
-function solHint() {
+async function solHint() {
     if (!SOL.active || SOL.won || SOL.busy) return;
+    if (SOLV.status === 'running') {
+        solMsg('Je cherche…');
+        for (let i = 0; i < 15 && SOLV.status === 'running'; i++) await new Promise(r => setTimeout(r, 100));   // 1,5 s au plus
+    }
+    if (SOLV.status === 'lose') { solMsg('Il n\'y a plus moyen de gagner cette donne' + (SOLV.back ? ` : reviens ${coups(SOLV.back)} en arrière.` : '.'), true); return; }
+    if (SOLV.status === 'win' && SOLV.path && SOLV.path.length) {             // un coup qui mène à la victoire
+        const g = svToGame(SOLV.path[0]);
+        const flash = (els, txt) => { solFlash(els, 'hint'); solMsg('Indice : ' + txt); };
+        if (g.draw) return flash([SOL.slots.stock, SOL.stock.length ? SOL.els[SOL.stock[SOL.stock.length - 1].id] : null], SOL.stock.length ? 'touche la pioche.' : 'touche la pioche pour retourner la défausse.');
+        const dstTxt = d => d.to === 'found' ? 'sur une fondation' : (t => t ? `sur ${cname(t)}` : 'sur la colonne vide')(SOL.tab[d.i].slice(-1)[0]);
+        const dstEl = d => d.to === 'found' ? (d.i !== undefined ? (SOL.found[d.i].slice(-1)[0] ? SOL.els[SOL.found[d.i].slice(-1)[0].id] : SOL.slots['f' + d.i]) : null)
+                                            : (t => t ? SOL.els[t.id] : SOL.slots['t' + d.i])(SOL.tab[d.i].slice(-1)[0]);
+        if (g.drawTo) return flash([SOL.slots.stock, SOL.stock.length ? SOL.els[SOL.stock[SOL.stock.length - 1].id] : null, dstEl(g.dst)],
+                                   `pioche jusqu'au ${cname(g.drawTo)} : il ira ${dstTxt(g.dst)}.`);
+        const cards = solCards(g.src);
+        return flash([...cards.map(c => SOL.els[c.id]), dstEl(g.dst)], `${cname(cards[0])}${cards.length > 1 ? ' avec sa suite' : ''} → ${dstTxt(g.dst)}.`);
+    }
+    // pas de réponse sûre : indice simple
     const h = solHintMove();
     if (!h) { solMsg('Plus aucun coup possible : tu peux annuler des coups (↶) ou rejouer la donne (menu ☰).', true); return; }
     if (h.draw) {
@@ -2378,7 +2652,9 @@ function solRulesHTML() {
         <li>Sur les fondations, on monte <b>dans la même couleur</b> : As, 2, 3… jusqu'au Roi. On peut redescendre une carte d'une fondation vers une colonne.</li></ul>
     <h4>Sur cet écran</h4><ul>
         <li><b>Toucher</b> une carte la joue à la meilleure place (fondation d'abord) ; on peut aussi la <b>faire glisser</b>.</li>
-        <li>↶ annule le dernier coup, 💡 donne un indice. Quand tout est découvert, « Terminer » range les cartes tout seul.</li></ul>`;
+        <li>↶ annule le dernier coup. Quand tout est découvert, « Terminer » range les cartes tout seul.</li>
+        <li>Après chaque coup, le jeu <b>vérifie en arrière-plan</b> s'il reste une façon de gagner (en connaissant les cartes cachées). Si ce n'est plus le cas, il te le dit et te propose de revenir au dernier moment où c'était encore gagnable.</li>
+        <li>💡 montre un coup qui mène à la victoire quand le calcul en a trouvé une ; sinon, un coup possible.</li></ul>`;
 }
 
 $('sol-board').addEventListener('pointerdown', solPointerDown);
@@ -2390,9 +2666,11 @@ $('sol-hint').addEventListener('click', solHint);
 $('sol-rules').addEventListener('click', () => modal(solRulesHTML(), [{ label: 'Fermer', value: 1 }], 2));
 $('sol-menu').addEventListener('click', solMenu);
 $('sol-finish').addEventListener('click', solFinish);
+$('sol-back').addEventListener('click', solGoBack);
+$('sol-new2').addEventListener('click', solStartNew);
 window.addEventListener('resize', () => { if (SOL.active) solRender(); });
 document.addEventListener('visibilitychange', () => { if (SOL.active) solSave(); });
-window.solitaire = { SOL, canFound, canTab, solMove, solDraw, solUndo, solAutoDest, solHintMove, solLocate, solNewDeal, solRender, solFinish, solCanFinish, solCards, solStats };
+window.solitaire = { SOLV, solCheck, SV, svFromGame, svToGame, SOL, canFound, canTab, solMove, solDraw, solUndo, solAutoDest, solHintMove, solLocate, solNewDeal, solRender, solFinish, solCanFinish, solCards, solStats };
 
 if (TEST && !TEST.showStart && TEST.game === 'solitaire') {
     solStart({ draw: TEST.draw || 1, seed: TEST.seed });
