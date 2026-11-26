@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#083d1d">
+<title>Belote</title>
+<style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; }
+    body {
+        background: #0b5d2b;
+        font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        color: #fff;
+        -webkit-user-select: none; user-select: none;
+        overflow: hidden;
+    }
+    button { font-family: inherit; -webkit-tap-highlight-color: transparent; cursor: pointer; }
+
+    #app { display: flex; flex-direction: column; height: 100vh; height: 100dvh; max-width: 900px; margin: 0 auto; }
+
+    /* --- Bandeau du haut : scores et boutons --- */
+    header {
+        display: flex; align-items: center; gap: 6px;
+        background: #083d1d; padding: 6px 8px; font-size: 13px; flex-shrink: 0;
+    }
+    header .title { font-weight: 700; font-size: 15px; margin-right: 2px; }
+    #scorebar { flex: 1; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; min-width: 0; }
+    .sc { white-space: nowrap; }
+    .sc b { font-size: 14px; }
+    .t0 { color: #8fd3ff; }  /* équipe 1/3 */
+    .t1 { color: #ffb38a; }  /* équipe 2/4 */
+    .chip { background: rgba(255,255,255,0.12); border-radius: 10px; padding: 1px 7px; white-space: nowrap; }
+    .top-btn {
+        background: rgba(255,255,255,0.12); color: #fff; border: none; border-radius: 8px;
+        height: 32px; min-width: 34px; padding: 0 8px; font-size: 14px;
+    }
+
+    /* --- Table --- */
+    #table { flex: 1; position: relative; min-height: 0; }
+    .seat { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 3px; }
+    .seat-top { top: 6px; left: 50%; transform: translateX(-50%); }
+    .seat-left { left: 4px; top: 50%; transform: translateY(-50%); }
+    .seat-right { right: 4px; top: 50%; transform: translateY(-50%); }
+    .pname {
+        font-size: 12px; font-weight: 600; white-space: nowrap; padding: 2px 7px; border-radius: 10px;
+        background: rgba(0,0,0,0.25);
+    }
+    .pname.turn { background: #ffd54f; color: #222; }
+    .badge { font-size: 10px; border-radius: 6px; padding: 0 4px; margin-left: 3px; background: #fff; color: #0b5d2b; font-weight: 700; }
+    .badge.taker { background: #ffd54f; color: #222; }
+    .bubble {
+        background: #fff; color: #222; font-size: 12px; font-weight: 700; border-radius: 10px;
+        padding: 2px 8px; white-space: nowrap; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .bubble.belote { background: #ffd54f; }
+
+    .minis { display: flex; }
+    .seat-top .minis { flex-direction: row; }
+    .seat-left .minis, .seat-right .minis { flex-direction: column; }
+    .seat-top .minis .card + .card { margin-left: calc(var(--mw) * -0.42); }
+    .seat-left .minis .card + .card, .seat-right .minis .card + .card { margin-top: calc(var(--mh) * -0.62); }
+
+    #center {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        width: calc(var(--tw) * 3 + 24px); height: calc(var(--th) * 2 + 34px);
+    }
+    .slot { position: absolute; }
+    .slot-0 { left: 50%; bottom: 0; transform: translateX(-50%); }
+    .slot-1 { right: 0; top: 50%; transform: translateY(-50%); }
+    .slot-2 { left: 50%; top: 0; transform: translateX(-50%); }
+    .slot-3 { left: 0; top: 50%; transform: translateY(-50%); }
+    .slot .card { width: var(--tw); height: var(--th); transition: transform 0.2s; }
+    /* carte maîtresse du pli en cours : liseré doré */
+    .slot .card.lead { box-shadow: 0 0 0 2px rgba(255,213,79,0.9), 0 1px 3px rgba(0,0,0,0.35); }
+    /* pli terminé : la carte gagnante grossit */
+    .slot .card.win { transform: scale(1.28); z-index: 3; box-shadow: 0 0 0 4px #ffd54f, 0 6px 16px rgba(0,0,0,0.55); }
+
+    /* Atout bien visible : pastille sur la table */
+    #trump-badge {
+        position: absolute; left: 8px; top: 8px; display: flex; flex-direction: column; align-items: center;
+        background: rgba(0,0,0,0.28); border-radius: 12px; padding: 4px 8px 6px; min-width: 60px; z-index: 4;
+    }
+    #trump-badge[hidden] { display: none; }
+    #trump-badge .lbl { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+    #trump-badge .sym {
+        width: 46px; height: 46px; border-radius: 50%; background: #fff; display: flex; align-items: center;
+        justify-content: center; font-size: 34px; line-height: 1; margin: 3px 0; box-shadow: 0 0 0 3px #ffd54f; color: #222;
+    }
+    #trump-badge .sym.red { color: #d32f2f; }
+    #trump-badge .who { font-size: 11px; white-space: nowrap; }
+    /* cartes d'atout : fond doré */
+    .card.trumpc { background: #fff3c4; border-color: #e0a800; }
+    .pname.winner { background: #ffd54f; color: #222; box-shadow: 0 0 0 2px #fff; }
+    .badge.lead { background: #ffd54f; color: #222; }
+    .bubble.win { background: #ffd54f; }
+    #turned {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 12px;
+    }
+    #turned .card { width: var(--tw); height: var(--th); }
+
+    /* --- Cartes --- */
+    :root { --cw: 54px; --ch: 78px; --mw: 30px; --mh: 42px; --tw: 50px; --th: 72px; }
+    .card {
+        position: relative; width: var(--cw); height: var(--ch); flex-shrink: 0;
+        background: #fff; border-radius: 6px; border: 1px solid #c9c9c9;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.35); color: #222; font-weight: 700;
+    }
+    .card .rk { position: absolute; top: 3px; left: 4px; line-height: 0.95; font-size: calc(var(--w, var(--cw)) * 0.30); text-align: center; }
+    .card .rk span { display: block; font-size: 0.9em; }
+    .card .mid { position: absolute; left: 50%; top: 58%; transform: translate(-50%, -50%); font-size: calc(var(--w, var(--cw)) * 0.52); }
+    .card.red { color: #d32f2f; }
+    .card.back {
+        background: repeating-linear-gradient(45deg, #1565c0 0 4px, #1e88e5 4px 8px);
+        border: 2px solid #fff;
+    }
+    .minis .card { width: var(--mw); height: var(--mh); --w: var(--mw); border-radius: 4px; }
+    .minis .card .rk { top: 2px; left: 3px; }
+    .slot .card, #turned .card { --w: var(--tw); }
+    .card .star { position: absolute; top: 2px; right: 3px; font-size: 11px; color: #f9a825; }
+
+    /* --- Main du joueur (en bas) --- */
+    #bottom { flex-shrink: 0; padding-bottom: env(safe-area-inset-bottom); }
+    #msg {
+        min-height: 2.5em; display: flex; align-items: center; justify-content: center; text-align: center;
+        font-size: 14px; padding: 4px 10px; line-height: 1.3;
+    }
+    #msg.error {
+        background: #fff3cd; color: #4e3a00; border-radius: 10px; margin: 0 8px;
+        border-left: 5px solid #f0a500; text-align: left; justify-content: flex-start;
+    }
+    #actions { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; padding: 0 8px 6px; }
+    #actions:empty { display: none; }
+    .act {
+        background: #fff; color: #0b5d2b; border: none; border-radius: 10px; padding: 9px 14px;
+        font-size: 15px; font-weight: 700; box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    .act.alt { background: rgba(255,255,255,0.15); color: #fff; }
+    .act .r { color: #d32f2f; }
+    .act .k { color: #222; }
+    #actions input[type=range] { width: 160px; }
+    #mylabel { text-align: center; font-size: 12px; opacity: 0.9; margin-bottom: 8px; }
+    #hand { display: flex; justify-content: center; padding: 4px 4px 10px; min-height: calc(var(--ch) + 14px); }
+    #hand .card + .card { margin-left: calc(var(--cw) * -0.28); }
+    #hand .card { transition: transform 0.12s; }
+    #hand.active .card.ok { cursor: pointer; }
+    @media (hover: hover) { #hand.active .card:hover { transform: translateY(-8px); } }
+    #hand .card.dim { filter: brightness(0.6); }
+    #hand .card.hint { transform: translateY(-10px); box-shadow: 0 0 0 3px #ffd54f, 0 3px 8px rgba(0,0,0,0.4); }
+
+    /* --- Fenêtres (résultats, options, règles) --- */
+    .overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: flex;
+        align-items: center; justify-content: center; padding: 10px; z-index: 50;
+    }
+    .overlay[hidden] { display: none; }
+    .box {
+        background: #fff; color: #222; border-radius: 12px; padding: 14px 16px; width: 100%; max-width: 460px;
+        max-height: 92vh; overflow: auto; -webkit-user-select: text; user-select: text;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+    .box h3 { margin: 0 0 8px; font-size: 18px; color: #0b5d2b; }
+    .box h4 { margin: 12px 0 4px; font-size: 15px; color: #0b5d2b; }
+    .box p, .box li { font-size: 14px; line-height: 1.4; }
+    .box ul { padding-left: 18px; margin: 4px 0; }
+    .box table { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0; }
+    .box td, .box th { padding: 4px 6px; border-bottom: 1px solid #e5e5e5; text-align: right; }
+    .box td:first-child, .box th:first-child { text-align: left; }
+    .box .verdict { background: #f1f8e9; border-left: 4px solid #43a047; padding: 8px 10px; border-radius: 6px; font-size: 14px; }
+    .box .verdict.bad { background: #ffebee; border-left-color: #e53935; }
+    .box .verdict.mid { background: #fff8e1; border-left-color: #f9a825; }
+    .box .btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+    .box .btns button { border: none; border-radius: 8px; padding: 9px 14px; font-size: 15px; font-weight: 600; background: #0b5d2b; color: #fff; }
+    .box .btns button.sec { background: #e8eae8; color: #222; }
+    .box .r { color: #d32f2f; }
+    .box .t0 { color: #1565c0; }   /* couleurs d'équipe lisibles sur fond blanc */
+    .box .t1 { color: #c43e00; }
+    .box select { font-size: 15px; padding: 4px; }
+    .box label { font-size: 14px; }
+    .opt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
+    .trick-line { font-size: 14px; padding: 3px 0; border-bottom: 1px solid #eee; }
+    .ready { text-align: center; }
+    .ready p { font-size: 16px; }
+
+    /* Écrans plus grands : cartes plus grandes */
+    @media (min-width: 700px) and (min-height: 600px) {
+        :root { --cw: 72px; --ch: 104px; --mw: 40px; --mh: 56px; --tw: 66px; --th: 94px; }
+        header { font-size: 14px; }
+    }
+    /* Petits téléphones */
+    @media (max-width: 360px) {
+        :root { --cw: 48px; --ch: 70px; --mw: 26px; --mh: 37px; --tw: 44px; --th: 64px; }
+        header .title { display: none; }
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <header>
+        <span class="title">Belote</span>
+        <div id="scorebar"></div>
+        <button class="top-btn" id="btn-tricks" title="Plis de la donne">Plis</button>
+        <button class="top-btn" id="btn-rules" title="Règles">?</button>
+        <button class="top-btn" id="btn-options" title="Options">⚙</button>
+    </header>
+    <main id="table">
+        <div id="trump-badge" hidden><span class="lbl">Atout</span><span class="sym" id="trump-sym"></span><span class="who" id="trump-who"></span></div>
+        <div class="seat seat-left" id="seat-3"></div>
+        <div class="seat seat-top" id="seat-2"></div>
+        <div class="seat seat-right" id="seat-1"></div>
+        <div id="center">
+            <div class="slot slot-0" id="slot-0"></div>
+            <div class="slot slot-1" id="slot-1"></div>
+            <div class="slot slot-2" id="slot-2"></div>
+            <div class="slot slot-3" id="slot-3"></div>
+            <div id="turned"></div>
+        </div>
+    </main>
+    <div id="bottom">
+        <div id="msg"></div>
+        <div id="actions"></div>
+        <div id="mylabel"></div>
+        <div id="hand"></div>
+    </div>
+</div>
+<div class="overlay" id="overlay" hidden><div class="box" id="box"></div></div>
+<!-- Fenêtres d'information (plis, règles, options) : au-dessus, sans bloquer la partie -->
+<div class="overlay" id="overlay2" hidden style="z-index:60"><div class="box" id="box2"></div></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   BELOTE — d'après l'ancien programme Turbo Pascal BELOTE.PAS
+   Joueurs 1 à 4 (internes 0 à 3), équipes 1/3 et 2/4, jeu dans le sens
+   inverse des aiguilles d'une montre (vers la droite).
+   ===================================================================== */
+
+// ---------------- Cartes ----------------
+const SUITS = ['H', 'S', 'D', 'C'];                       // ordre d'affichage : ♥ ♠ ♦ ♣ (couleurs alternées)
+const SYM = { H: '♥', S: '♠', D: '♦', C: '♣' };
+const SUIT_NAME = { H: 'cœur', S: 'pique', D: 'carreau', C: 'trèfle' };
+const RED = { H: true, D: true };
+const RANKS = ['A', '10', 'R', 'D', 'V', '9', '8', '7'];  // hors atout, du plus fort au plus faible
+const PLAIN_PTS = { A: 11, '10': 10, R: 4, D: 3, V: 2, '9': 0, '8': 0, '7': 0 };
+const TRUMP_ORDER = ['V', '9', 'A', '10', 'R', 'D', '8', '7'];
+const TRUMP_PTS = { V: 20, '9': 14, A: 11, '10': 10, R: 4, D: 3, '8': 0, '7': 0 };
+const TEAM = ['1/3', '2/4'];
+const GOAL = 1000;
+
+const makeDeck = () => SUITS.flatMap(s => RANKS.map(r => ({ s, r, id: r + s })));
+const next = p => (p + 1) % 4;
+const prev = p => (p + 3) % 4;
+const partner = p => (p + 2) % 4;
+const team = p => p % 2;
+const cname = c => c.r + SYM[c.s];
+const suitTxt = s => `${SYM[s]} (${SUIT_NAME[s]})`;
+
+// ---------------- Options (mémorisées) ----------------
+const DEFAULT_OPTIONS = {
+    players: [
+        { human: true, visible: true },
+        { human: false, visible: false },
+        { human: false, visible: false },
+        { human: false, visible: false },
+    ],
+    markMasters: true,     // marquer mes cartes maîtresses (★)
+    greyIllegal: false,    // griser les cartes que je n'ai pas le droit de jouer
+    pauseTrick: false,     // attendre un appui après chaque pli
+    speed: 'normale',
+};
+const SPEED = { lente: 1100, normale: 650, rapide: 250 };
+const TEST = window.BELOTE_TEST || null;     // utilisé par les tests automatiques
+const ms = v => (TEST && !TEST.realtime ? 0 : v);
+const sleep = v => new Promise(r => setTimeout(r, ms(v)));
+const hook = (name, ...args) => { if (TEST && typeof TEST[name] === 'function') TEST[name](...args); };   // tests uniquement
+
+function loadJSON(key, fallback) {
+    try { const v = JSON.parse(localStorage.getItem(key)); return v || fallback; } catch (e) { return fallback; }
+}
+function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (e) { /* ignoré */ } }
+
+let OPT = Object.assign({}, DEFAULT_OPTIONS, loadJSON('belote_options', {}));
+if (!Array.isArray(OPT.players) || OPT.players.length !== 4) OPT.players = DEFAULT_OPTIONS.players;
+
+// ---------------- État de la partie ----------------
+const G = {
+    players: JSON.parse(JSON.stringify(OPT.players)),
+    scores: [0, 0], pat: 0, level: 1, firstWinner: null,
+    dealer: 2,                // le premier donneur sera le joueur 4 (comme l'original)
+    lastWinnerTeam: null, firstHand: true,
+    deck: makeDeck(),
+    hands: [[], [], [], []], turned: null, trump: null, taker: null,
+    trick: [], tricks: [], played: new Set(), cardPts: [0, 0], tricksWon: [0, 0], der: null,
+    belote: { holder: null, count: 0 },
+    ai: null, turnPlayer: null, bubbles: {}, msg: '', msgKind: '', actions: null, waiting: null,
+    phase: 'start', handNo: 0,
+};
+const saved = loadJSON('belote_match', null);
+if (saved && Array.isArray(saved.scores)) Object.assign(G, saved, { firstHand: true });
+
+function saveMatch() {
+    saveJSON('belote_match', {
+        scores: G.scores, pat: G.pat, level: G.level, firstWinner: G.firstWinner,
+        dealer: G.dealer, lastWinnerTeam: G.lastWinnerTeam,
+    });
+}
+
+// Hauteur (1 = la plus forte) et valeur d'une carte selon l'atout
+const height = c => (c.s === G.trump ? TRUMP_ORDER.indexOf(c.r) : RANKS.indexOf(c.r)) + 1;
+const points = c => (c.s === G.trump ? TRUMP_PTS[c.r] : PLAIN_PTS[c.r]);
+const beats = (a, b) => (a.s === b.s ? height(a) < height(b) : a.s === G.trump);
+
+function trickWinner(trick) {
+    let best = trick[0];
+    for (const e of trick.slice(1)) if (beats(e.card, best.card)) best = e;
+    return best;
+}
+
+// Carte maîtresse : toutes les cartes plus fortes de sa couleur sont déjà tombées
+function isMaster(c) {
+    return makeDeck().every(x => x.s !== c.s || height(x) >= height(c) || G.played.has(x.id));
+}
+// Une carte plus forte de la même couleur est dans le pli en cours
+const masterInTrick = c => G.trick.some(e => e.card.s === c.s && height(e.card) < height(c));
+
+// =====================================================================
+// RÈGLES DU JEU DE LA CARTE (belote classique)
+// =====================================================================
+function trickInfo(p) {
+    const hand = G.hands[p], T = G.trump;
+    const led = G.trick[0].card.s;
+    const follow = hand.filter(c => c.s === led);
+    const trumps = hand.filter(c => c.s === T);
+    const trickTrumps = G.trick.filter(e => e.card.s === T).map(e => e.card);
+    const bestTrump = trickTrumps.length ? trickTrumps.reduce((a, b) => (height(a) < height(b) ? a : b)) : null;
+    const higher = trumps.filter(c => !bestTrump || height(c) < height(bestTrump));
+    const w = trickWinner(G.trick);
+    return { hand, T, led, follow, trumps, bestTrump, higher, winner: w, partnerMaster: w.p === partner(p) };
+}
+
+function legalCards(p) {
+    const hand = G.hands[p];
+    if (!G.trick.length) return hand.slice();                         // on entame : tout est permis
+    const i = trickInfo(p);
+    if (i.led === i.T) {                                              // atout demandé
+        if (i.trumps.length) return i.higher.length ? i.higher : i.trumps;   // jouer atout, en montant si possible
+        return hand.slice();
+    }
+    if (i.follow.length) return i.follow;                             // fournir
+    if (i.partnerMaster) {                                            // partenaire maître : défausse libre,
+        const trumpOk = i.higher.length ? i.higher : i.trumps;        // mais si on joue atout, on monte si on peut
+        return hand.filter(c => c.s !== i.T).concat(trumpOk);
+    }
+    if (i.trumps.length) return i.higher.length ? i.higher : i.trumps;   // couper / surcouper / sous-couper
+    return hand.slice();                                              // ni couleur ni atout : défausse
+}
+
+const list = cards => cards.map(cname).join(', ');
+
+// Explication d'une carte refusée (pour un joueur humain)
+function explainIllegal(p, card) {
+    const i = trickInfo(p);
+    const who = `le joueur ${i.winner.p + 1}, ${i.partnerMaster ? 'votre partenaire' : 'un adversaire'}`;
+    if (i.led === i.T) {
+        if (card.s !== i.T) return `L'atout ${SYM[i.T]} est demandé : vous devez jouer atout, vous en avez (${list(i.trumps)}).`;
+        return `L'atout est demandé : il faut toujours monter. Le ${cname(i.bestTrump)} est sur le tapis, vous devez jouer plus fort : ${list(i.higher)}.`;
+    }
+    if (i.follow.length) return `${suitTxt(i.led)} est demandé : vous devez fournir, vous en avez encore (${list(i.follow)}).`;
+    if (i.partnerMaster) {
+        return `Votre partenaire est maître : vous pouvez vous défausser de n'importe quelle couleur. Mais si vous jouez atout, il faut monter au-dessus du ${cname(i.bestTrump)} : ${list(i.higher)}.`;
+    }
+    if (card.s !== i.T) {
+        if (!i.bestTrump) return `Vous n'avez pas de ${SYM[i.led]} et votre partenaire n'est pas maître (c'est ${who}) : vous devez couper avec un atout ${SYM[i.T]}.`;
+        if (i.higher.length) return `Vous n'avez pas de ${SYM[i.led]} et un adversaire a coupé avec le ${cname(i.bestTrump)} : vous devez surcouper (${list(i.higher)}).`;
+        return `Vous n'avez pas de ${SYM[i.led]} et un adversaire a coupé avec le ${cname(i.bestTrump)} : vous ne pouvez pas surcouper, mais vous devez quand même jouer atout (sous-couper).`;
+    }
+    return `Un adversaire a coupé avec le ${cname(i.bestTrump)} : vous devez surcouper si vous le pouvez (${list(i.higher)}).`;
+}
+
+// =====================================================================
+// INTELLIGENCE DE L'ORDINATEUR (d'après « carteordi » et « annonceordi »)
+// =====================================================================
+function initAI() {
+    G.ai = {
+        cut: [0, 1, 2, 3].map(() => ({ H: 0, S: 0, D: 0, C: 0 })),  // 1 = a coupé cette couleur, -1 = ne peut plus couper
+        hasTrump: [true, true, true, true],                          // peut encore avoir de l'atout
+        led: { H: 0, S: 0, D: 0, C: 0 },                              // nombre de plis entamés dans chaque couleur
+        trumpsLeft: 8,                                                // atouts pas encore joués
+    };
+}
+
+function noMoreTrump(p) {
+    for (const s of SUITS) G.ai.cut[p][s] = -1;
+    G.ai.hasTrump[p] = false;
+}
+
+// Ce que l'ordinateur apprend quand une carte est jouée
+function trackPlay(p, card, pos, winnerBefore) {
+    const T = G.trump, led = G.trick[0].card.s;
+    if (pos > 1) {
+        if (led !== T) {
+            if (card.s === T) G.ai.cut[p][led] = 1;
+            else if (card.s !== led && winnerBefore.p !== partner(p)) {
+                // ne fournit pas, ne coupe pas alors que son partenaire n'était pas maître : il n'a plus d'atout
+                G.ai.cut[p][led] = -1;
+                G.ai.hasTrump[p] = false;
+            }
+        } else if (card.s !== T) {
+            noMoreTrump(p);                     // atout demandé et pas d'atout joué
+        }
+    }
+    if (card.s === T) G.ai.trumpsLeft--;
+    if (G.ai.trumpsLeft === 0) for (let q = 0; q < 4; q++) noMoreTrump(q);
+    if (pos === 1) G.ai.led[card.s]++;
+}
+
+function aiCard(p) {
+    const hand = G.hands[p], T = G.trump, ai = G.ai;
+    const ctm = G.trick.length ? trickWinner(G.trick) : null;
+    const adv1 = next(p), adv2 = prev(p);
+    let nbat = ai.trumpsLeft - hand.filter(c => c.s === T).length;   // atouts encore chez les autres
+    if (nbat === 0) for (let q = 0; q < 4; q++) if (q !== p) noMoreTrump(q);
+
+    const legal = legalCards(p);
+    if (legal.length === 1) return legal[0];
+
+    const posit = G.trick.length + 1;
+    const led = G.trick.length ? G.trick[0].card.s : null;
+    const advTrump = ai.hasTrump[adv1] || ai.hasTrump[adv2];
+    const advCut = s => ai.cut[adv1][s] > 0 || ai.cut[adv2][s] > 0;
+    const takerSide = team(G.taker) === team(p);
+
+    const scored = legal.map(c => {
+        const h = height(c), m = isMaster(c);
+        let pts = 0;
+        if (posit === 1) {                                           // on entame
+            if (!advTrump && m && c.s !== T) pts += 50;              // plus d'atout en face : jouer les maîtresses
+            if (c.s === T && m && nbat === 1 && advTrump) pts += 50; // faire tomber le dernier atout
+            if (takerSide && c.s === T && advTrump) {                // côté preneur : faire tomber les atouts
+                if (m) pts += 50; else if (h < 5) pts += h - 20; else pts += 30 - h;
+            } else if (ai.led[c.s] === 0 && h === 1 && c.s !== T && !advCut(c.s)) pts += h + 20;   // un as pas encore joué
+            else if (m && (h > 4 || !advCut(c.s))) pts += h + 9;     // une maîtresse
+            else pts += c.s === T ? h - 10 : h;                      // sinon une petite, pas d'atout
+        }
+        if (posit === 4) {                                           // dernier à jouer
+            if (team(ctm.p) === team(p)) {                           // partenaire maître : charger / se défausser
+                if (c.s === T) pts += m ? -51 + h : (h < 5 ? 20 - h : -40 + h);
+                else pts += m ? -20 - h : 50 - h;
+            } else {
+                const ch = height(ctm.card);
+                if ((ctm.card.s === c.s && h < ch) || (ctm.card.s !== T && c.s === T)) pts += h + 20;   // prendre au plus juste
+                else pts += 10 + h;
+            }
+        }
+        if (posit === 2 || posit === 3) {                            // au milieu
+            if (m && !masterInTrick(c)) {
+                if (nbat === 0 || c.s === T ||
+                    (c.s === led && ((team(ctm.p) === team(p) && ctm.card.s === T) || !advCut(led)))) pts += 50 - h;
+                else pts += -30 + h;
+            } else if (team(ctm.p) === team(p) && ctm.wasMaster) pts += 30 - h;   // partenaire a joué maître : charger
+            else pts += -30 + h;
+        }
+        if (nbat === 0 && c.s === T) pts += -50 + h;                 // les autres n'ont plus d'atout : garder les siens
+        if (c.s === T && h === 1 &&                                  // valet d'atout
+            ((takerSide && (led === T || posit === 1)) || (!takerSide && posit === 2 && led === T))) pts += 200;
+        return { c, pts };
+    });
+    const max = Math.max(...scored.map(x => x.pts));
+    const best = scored.filter(x => x.pts === max);
+    return best[Math.floor(Math.random() * best.length)].c;
+}
+
+// Faut-il prendre ? (5 cartes en main + la carte retournée)
+function aiBid(p, round) {
+    const cards = G.hands[p].slice(0, 5).concat([G.turned]);
+    const ok = suit => {
+        let nbAt = 0, nbAs = 0, best = 9;
+        for (const c of cards) {
+            if (c.s === suit) { nbAt++; best = Math.min(best, TRUMP_ORDER.indexOf(c.r) + 1); }
+            else if (c.r === 'A') nbAs++;
+        }
+        return (nbAt === 1 && best === 1 && nbAs >= 1) || (nbAt > 1 && best === 1) ||
+               (nbAt >= 2 && best <= 2 && nbAs >= 1) || (nbAt > 2 && best <= 2) ||
+               (nbAt >= 3 && best <= 3) || (nbAt >= 4 && best <= 5);
+    };
+    if (round === 1) return ok(G.turned.s) ? G.turned.s : null;
+    for (const s of ['H', 'D', 'C', 'S']) if (s !== G.turned.s && ok(s)) return s;
+    return null;
+}
+
+// =====================================================================
+// DÉROULEMENT D'UNE DONNE
+// =====================================================================
+function initHand() {
+    G.hands = [[], [], [], []]; G.turned = null; G.trump = null; G.taker = null;
+    G.trick = []; G.tricks = []; G.played = new Set(); G.cardPts = [0, 0]; G.tricksWon = [0, 0]; G.der = null;
+    G.belote = { holder: null, count: 0 }; G.bubbles = {}; G.turnPlayer = null;
+    G.leader = null; G.trickWinnerP = null;
+    initAI();
+}
+
+function shuffleDeck() {
+    const d = G.deck;
+    for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+}
+
+function sortHands() {
+    for (const h of G.hands) h.sort((a, b) => SUITS.indexOf(a.s) - SUITS.indexOf(b.s) || height(a) - height(b));
+}
+
+// Distribution : 3 cartes puis 2 à chacun, en commençant à droite du donneur ; la 21e est retournée
+function dealFirst() {
+    let i = 0, p = next(G.dealer);
+    for (const n of [3, 2]) for (let k = 0; k < 4; k++, p = next(p)) for (let x = 0; x < n; x++) G.hands[p].push(G.deck[i++]);
+    G.turned = G.deck[i++];
+    G.deckPos = i;
+}
+// Fin de la distribution : 3 cartes à chacun, 2 au preneur qui reçoit aussi la carte retournée
+function dealRest() {
+    let i = G.deckPos, p = next(G.dealer);
+    for (let k = 0; k < 4; k++, p = next(p)) {
+        const n = p === G.taker ? 2 : 3;
+        for (let x = 0; x < n; x++) G.hands[p].push(G.deck[i++]);
+    }
+    G.hands[G.taker].push(G.turned);
+}
+
+function detectBelote() {
+    for (let p = 0; p < 4; p++) {
+        const h = G.hands[p];
+        if (h.some(c => c.s === G.trump && c.r === 'R') && h.some(c => c.s === G.trump && c.r === 'D')) G.belote.holder = p;
+    }
+}
+
+// Ramassage sans mélange : les plis de l'équipe 1/3 puis ceux de 2/4 (comme l'original)
+function collectAfterPlay() {
+    G.deck = [0, 1].flatMap(t => G.tricks.filter(x => team(x.winner) === t).flatMap(x => x.cards.map(e => e.card)));
+}
+function collectNoTake() {
+    const d = [];
+    let p = next(G.dealer);
+    for (let k = 0; k < 4; k++, p = next(p)) d.push(...G.hands[p]);
+    d.push(...G.deck.slice(20));
+    G.deck = d;
+}
+
+function playCard(p, card) {
+    if (TEST && !legalCards(p).some(c => c.id === card.id)) window.belote.violations.push({ p, card: card.id });
+    const pos = G.trick.length + 1;
+    const winnerBefore = G.trick.length ? trickWinner(G.trick) : null;
+    const wasMaster = isMaster(card);
+    G.hands[p] = G.hands[p].filter(c => c.id !== card.id);
+    G.trick.push({ p, card, wasMaster });
+    G.played.add(card.id);
+    trackPlay(p, card, pos, winnerBefore);
+    if (G.belote.holder === p && card.s === G.trump && (card.r === 'R' || card.r === 'D')) {
+        G.belote.count++;
+        bubble(p, G.belote.count === 1 ? 'Belote !' : 'Rebelote !', 'belote', 1800);
+    }
+}
+
+// Décompte de la donne (règles classiques)
+function scoreHand() {
+    const T = team(G.taker), D = 1 - T;
+    const bel = [0, 0];
+    if (G.belote.holder !== null) bel[team(G.belote.holder)] = 20;          // belote-rebelote : imprenable
+    const tot = [G.cardPts[0] + bel[0], G.cardPts[1] + bel[1]];
+    const gain = [0, 0];
+    let verdict, handWinner = null, reserve = 0;
+    const capot = G.tricksWon[0] === 8 ? 0 : G.tricksWon[1] === 8 ? 1 : null;
+    if (capot !== null) {
+        gain[capot] = 252 + bel[capot]; gain[1 - capot] = bel[1 - capot];
+        verdict = capot === T ? 'capot' : 'capot-def'; handWinner = capot;
+    } else if (tot[T] > tot[D]) {
+        gain[T] = tot[T]; gain[D] = tot[D]; verdict = 'ok'; handWinner = T;
+    } else if (tot[T] < tot[D]) {
+        gain[D] = 162 + bel[D]; gain[T] = bel[T]; verdict = 'dedans'; handWinner = D;
+    } else {
+        gain[D] = tot[D]; gain[T] = bel[T]; reserve = tot[T] - bel[T]; verdict = 'litige';
+    }
+    const patBefore = G.pat;
+    let patWon = 0;
+    if (handWinner !== null && G.pat > 0) { gain[handWinner] += G.pat; patWon = G.pat; G.pat = 0; }
+    G.pat += reserve;
+    const before = G.scores.slice();
+    G.scores = [G.scores[0] + gain[0], G.scores[1] + gain[1]];
+    G.lastWinnerTeam = handWinner;
+    return { T, D, bel, tot, gain, verdict, handWinner, reserve, patBefore, patWon, before, cardPts: G.cardPts.slice(), der: G.der, capot };
+}
+
+function matchWinner() {
+    const [a, b] = G.scores;
+    if ((a >= GOAL || b >= GOAL) && a !== b) return a > b ? 0 : 1;
+    return null;
+}
+
+// =====================================================================
+// INTERFACE
+// =====================================================================
+const $ = id => document.getElementById(id);
+let viewer = 0;   // joueur vu en bas de l'écran
+
+const humans = () => [0, 1, 2, 3].filter(p => G.players[p].human);
+const isHuman = p => G.players[p].human;
+function pname(p) { return `Joueur ${p + 1}${p === viewer && isHuman(p) && humans().length === 1 ? ' (vous)' : ''}`; }
+const speed = () => SPEED[OPT.speed] || 650;
+const showFace = p => G.players[p].visible || (p === viewer && isHuman(p));
+
+function cardEl(c, cls = '') {
+    const d = document.createElement('div');
+    if (!c) { d.className = 'card back ' + cls; return d; }
+    d.className = `card ${RED[c.s] ? 'red' : ''} ${G.trump && c.s === G.trump ? 'trumpc' : ''} ${cls}`;
+    d.dataset.id = c.id;
+    d.innerHTML = `<div class="rk">${c.r}<span>${SYM[c.s]}</span></div><div class="mid">${SYM[c.s]}</div>`;
+    return d;
+}
+
+function bubble(p, text, cls = '', duration = 0) {
+    G.bubbles[p] = { text, cls };
+    render();
+    if (duration) setTimeout(() => { if (G.bubbles[p] && G.bubbles[p].text === text) { delete G.bubbles[p]; render(); } }, ms(duration));
+}
+
+function setMsg(text, kind = '') { G.msg = text; G.msgKind = kind; render(); }
+
+// Repères à côté du nom : donneur, preneur, et joueur qui entame le pli
+function seatBadges(p) {
+    let h = '';
+    if (p === G.dealer) h += '<span class="badge">D</span>';
+    if (p === G.taker) h += '<span class="badge taker">Preneur</span>';
+    if (G.phase === 'play' && G.trick.length === 0 && p === G.leader) h += '<span class="badge lead">▶ Entame</span>';
+    return h;
+}
+
+function render() {
+    // Bandeau
+    const lvl = ['Partie', 'Revanche', 'Belle'][G.level - 1];
+    let sb = `<span class="sc t0">1/3 <b>${G.scores[0]}</b></span><span class="sc t1">2/4 <b>${G.scores[1]}</b></span>` +
+             `<span class="chip">${lvl} · ${GOAL}</span>`;
+    if (G.trump) sb += `<span class="chip">Atout <b class="${RED[G.trump] ? 'r' : ''}" style="color:${RED[G.trump] ? '#ff8a80' : '#fff'}">${SYM[G.trump]}</b> · J${G.taker + 1}</span>`;
+    if (G.pat) sb += `<span class="chip">Litige : ${G.pat}</span>`;
+    $('scorebar').innerHTML = sb;
+
+    // Pastille d'atout sur la table
+    const tb = $('trump-badge');
+    tb.hidden = !G.trump;
+    if (G.trump) {
+        $('trump-sym').textContent = SYM[G.trump];
+        $('trump-sym').className = 'sym' + (RED[G.trump] ? ' red' : '');
+        $('trump-who').textContent = `pris par J${G.taker + 1}`;
+    }
+
+    // Joueurs autour de la table
+    for (let seat = 1; seat <= 3; seat++) {
+        const p = (viewer + seat) % 4;
+        const el = $('seat-' + seat);
+        el.innerHTML = '';
+        const name = document.createElement('div');
+        name.className = `pname t${team(p)} ${G.turnPlayer === p ? 'turn' : ''} ${G.trickWinnerP === p ? 'winner' : ''}`;
+        name.innerHTML = `Joueur ${p + 1}` + seatBadges(p);
+        const minis = document.createElement('div');
+        minis.className = 'minis';
+        for (const c of G.hands[p]) minis.appendChild(cardEl(showFace(p) ? c : null));
+        const b = G.bubbles[p];
+        if (seat === 2) {           // en haut : nom puis cartes
+            el.appendChild(name); el.appendChild(minis);
+            if (b) el.appendChild(Object.assign(document.createElement('div'), { className: 'bubble ' + b.cls, textContent: b.text }));
+        } else {
+            if (b) el.appendChild(Object.assign(document.createElement('div'), { className: 'bubble ' + b.cls, textContent: b.text }));
+            el.appendChild(name); el.appendChild(minis);
+        }
+    }
+
+    // Pli en cours
+    for (let s = 0; s < 4; s++) $('slot-' + s).innerHTML = '';
+    // carte maîtresse : liseré pendant le pli, agrandie quand le pli est terminé
+    const complete = G.trick.length === 4;
+    const w = G.trick.length ? trickWinner(G.trick) : null;
+    for (const e of G.trick) {
+        const seat = (e.p - viewer + 4) % 4;
+        $('slot-' + seat).appendChild(cardEl(e.card, w && w.p === e.p ? (complete ? 'win' : 'lead') : ''));
+    }
+    // Carte retournée pendant les annonces
+    const tu = $('turned');
+    tu.innerHTML = '';
+    if (G.turned && !G.trump) {
+        tu.appendChild(cardEl(G.turned));
+        tu.appendChild(Object.assign(document.createElement('div'), { textContent: 'Retournée' }));
+    }
+
+    // Message et boutons
+    const msg = $('msg');
+    msg.textContent = G.msg;
+    msg.className = G.msgKind;
+
+    // Ma main (joueur vu en bas)
+    const me = viewer;
+    const myB = G.bubbles[me];
+    $('mylabel').innerHTML = `<span class="pname t${team(me)} ${G.turnPlayer === me ? 'turn' : ''} ${G.trickWinnerP === me ? 'winner' : ''}">Joueur ${me + 1}` +
+        `${isHuman(me) ? (humans().length === 1 ? ' (vous)' : '') : ' (ordinateur)'} — équipe ${TEAM[team(me)]}` +
+        seatBadges(me) + `</span>` + (myB ? ` <span class="bubble ${myB.cls}">${myB.text}</span>` : '');
+    const hand = $('hand');
+    hand.innerHTML = '';
+    const myTurn = G.waiting && G.waiting.p === me;
+    hand.classList.toggle('active', !!myTurn);
+    const legal = myTurn ? legalCards(me).map(c => c.id) : [];
+    for (const c of G.hands[me]) {
+        if (!showFace(me)) { hand.appendChild(cardEl(null)); continue; }
+        let cls = '';
+        if (myTurn) cls += legal.includes(c.id) ? ' ok' : (OPT.greyIllegal ? ' dim' : '');
+        if (G.hintIds && G.hintIds.includes(c.id)) cls += ' hint';
+        const el = cardEl(c, cls);
+        if (OPT.markMasters && G.trump && isMaster(c) && !masterInTrick(c)) {
+            el.appendChild(Object.assign(document.createElement('div'), { className: 'star', textContent: '★' }));
+        }
+        hand.appendChild(el);
+    }
+}
+
+// --- Boutons d'action (annonces, mélange, coupe...) ---
+function ask(buttons, extra) {
+    return new Promise(resolve => {
+        const box = $('actions');
+        box.innerHTML = '';
+        if (extra) box.appendChild(extra);
+        for (const b of buttons) {
+            const btn = document.createElement('button');
+            btn.className = 'act ' + (b.cls || '');
+            btn.innerHTML = b.label;
+            btn.addEventListener('click', () => { box.innerHTML = ''; resolve(b.value); });
+            box.appendChild(btn);
+        }
+        if (TEST && TEST.auto) { box.innerHTML = ''; resolve(TEST.answer ? TEST.answer(buttons) : buttons[0].value); }
+    });
+}
+
+// --- Fenêtre (résultats, fin de partie...) ; layer 2 = fenêtres d'information ---
+function modal(html, buttons, layer = 1) {
+    return new Promise(resolve => {
+        const ov = $(layer === 2 ? 'overlay2' : 'overlay'), box = $(layer === 2 ? 'box2' : 'box');
+        box.innerHTML = html + '<div class="btns"></div>';
+        const bb = box.querySelector('.btns');
+        for (const b of buttons) {
+            const btn = document.createElement('button');
+            btn.textContent = b.label;
+            if (b.sec) btn.className = 'sec';
+            btn.addEventListener('click', () => {
+                if (b.action) { b.action(); return; }      // bouton secondaire : ne ferme pas la fenêtre
+                ov.hidden = true; resolve(b.value);
+            });
+            bb.appendChild(btn);
+        }
+        ov.hidden = false;
+        if (TEST && TEST.auto && layer === 1) { ov.hidden = true; resolve(buttons[0].value); }
+    });
+}
+
+// Plusieurs humains sur le même appareil : on cache le jeu le temps de passer l'appareil
+async function ensureViewer(p) {
+    if (viewer === p) return;
+    const privacy = humans().length > 1 && humans().some(h => !G.players[h].visible);
+    if (privacy) {
+        document.getElementById('table').style.visibility = 'hidden';
+        document.getElementById('hand').style.visibility = 'hidden';
+        await modal(`<div class="ready"><h3>Joueur ${p + 1}, à vous !</h3><p>Passez l'appareil au joueur ${p + 1}, puis touchez « Je suis prêt ».</p></div>`,
+                    [{ label: 'Je suis prêt', value: 1 }]);
+        document.getElementById('table').style.visibility = '';
+        document.getElementById('hand').style.visibility = '';
+    }
+    viewer = p;
+    render();
+}
+
+function defaultViewer() {
+    const h = humans();
+    viewer = h.length ? h[0] : 0;
+}
+
+// --- Étapes de la donne ---
+async function shuffleStep() {
+    let doShuffle;
+    const d = G.dealer;
+    if (G.firstHand) doShuffle = true;
+    else if (isHuman(d)) {
+        setMsg(`Joueur ${d + 1}, vous donnez. Mélanger le jeu ? (Sans mélange, les cartes gardent l'ordre des plis.)`);
+        doShuffle = await ask([{ label: 'Mélanger', value: true }, { label: 'Ne pas mélanger', value: false, cls: 'alt' }]);
+    } else {
+        const sameTeam = G.lastWinnerTeam !== null && G.lastWinnerTeam === team(d);
+        doShuffle = sameTeam ? false : Math.random() < 0.1;
+        setMsg(`Joueur ${d + 1} donne et ${doShuffle ? 'mélange le jeu.' : 'ne mélange pas.'}`);
+        await sleep(speed() * 1.5);
+    }
+    if (doShuffle) shuffleDeck();
+    G.shuffled = doShuffle;
+    G.firstHand = false;
+}
+
+async function cutStep() {
+    const c = prev(G.dealer);     // le joueur à gauche du donneur coupe
+    let n;
+    if (isHuman(c)) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = `<input type="range" min="2" max="30" value="16" id="cut-range"> <b id="cut-val">16</b> cartes`;
+        wrap.querySelector('input').addEventListener('input', e => { wrap.querySelector('#cut-val').textContent = e.target.value; });
+        setMsg(`Joueur ${c + 1}, vous coupez : combien de cartes ?`);
+        await ask([{ label: 'Couper', value: 1 }], wrap);
+        n = parseInt(wrap.querySelector('input').value, 10);
+    } else {
+        n = 2 + Math.floor(Math.random() * 28);
+        setMsg(`Joueur ${c + 1} coupe ${n} cartes.`);
+        await sleep(speed() * 1.5);
+    }
+    G.deck = G.deck.slice(n).concat(G.deck.slice(0, n));
+}
+
+async function bidding() {
+    const t = G.turned.s;
+    let p = next(G.dealer);
+    // Premier tour : prendre à la couleur retournée
+    for (let k = 0; k < 4; k++, p = next(p)) {
+        G.turnPlayer = p;
+        let take;
+        if (isHuman(p)) {
+            await ensureViewer(p);
+            setMsg(`Premier tour : prenez-vous à ${suitTxt(t)} ? (vous recevrez la carte retournée)`);
+            take = await ask([{ label: `Prendre à <span class="${RED[t] ? 'r' : 'k'}">${SYM[t]}</span>`, value: true },
+                              { label: 'Passer', value: false, cls: 'alt' }]);
+        } else {
+            setMsg(`Joueur ${p + 1} réfléchit…`);
+            await sleep(speed());
+            take = !(TEST && TEST.noTake) && aiBid(p, 1) !== null;
+        }
+        bubble(p, take ? `Je prends ${SYM[t]}` : 'Passe');
+        if (take) { G.taker = p; G.trump = t; return true; }
+        await sleep(speed() * 0.6);
+    }
+    // Deuxième tour : choisir une autre couleur
+    for (let k = 0; k < 4; k++, p = next(p)) {
+        G.turnPlayer = p;
+        let suit;
+        if (isHuman(p)) {
+            await ensureViewer(p);
+            setMsg(`Deuxième tour : choisissez l'atout (sauf ${SYM[t]}) ou passez.`);
+            suit = await ask(SUITS.filter(s => s !== t).map(s => ({ label: `<span class="${RED[s] ? 'r' : 'k'}">${SYM[s]}</span> ${SUIT_NAME[s]}`, value: s }))
+                .concat([{ label: 'Passer', value: null, cls: 'alt' }]));
+        } else {
+            setMsg(`Joueur ${p + 1} réfléchit…`);
+            await sleep(speed());
+            suit = (TEST && TEST.noTake) ? null : aiBid(p, 2);
+        }
+        bubble(p, suit ? `Je prends ${SYM[suit]}` : 'Passe');
+        if (suit) { G.taker = p; G.trump = suit; return true; }
+        await sleep(speed() * 0.6);
+    }
+    return false;
+}
+
+function askCard(p) {
+    const legal = legalCards(p);
+    let ctx = 'À vous de jouer';
+    if (!G.trick.length) ctx += ' : vous entamez le pli.';
+    else {
+        const w = trickWinner(G.trick);
+        ctx += ` — demandé : ${SYM[G.trick[0].card.s]} · maître : J${w.p + 1} ` +
+               `(${w.p === partner(p) ? 'partenaire' : 'adversaire'}) avec ${cname(w.card)}`;
+    }
+    if (legal.length === 1) ctx += ' (une seule carte possible)';
+    setMsg(ctx);
+    return new Promise(resolve => { G.waiting = { p, resolve }; render(); });
+}
+
+function onHandClick(e) {
+    const el = e.target.closest('.card');
+    if (!el || !G.waiting || G.waiting.p !== viewer) return;
+    const p = G.waiting.p;
+    const card = G.hands[p].find(c => c.id === el.dataset.id);
+    if (!card) return;
+    const legal = legalCards(p);
+    if (legal.some(c => c.id === card.id)) {
+        const w = G.waiting;
+        G.waiting = null; G.hintIds = null;
+        setMsg('');
+        w.resolve(card);
+    } else {
+        G.hintIds = legal.map(c => c.id);
+        setMsg('❌ ' + explainIllegal(p, card) + ' Cartes jouables : ' + list(legal) + '.', 'error');
+        clearTimeout(G.hintTimer);
+        G.hintTimer = setTimeout(() => { G.hintIds = null; render(); }, 2500);
+    }
+}
+
+async function trickPause() {
+    if (OPT.pauseTrick && !(TEST && TEST.auto)) {
+        await ask([{ label: 'Continuer', value: 1 }]);
+    } else {
+        await sleep(Math.max(1500, speed() * 2.4));   // le temps de voir qui gagne
+    }
+}
+
+async function playTricks() {
+    let leader = next(G.dealer);
+    for (let t = 0; t < 8; t++) {
+        G.trick = [];
+        G.leader = leader;          // repère « ▶ Entame » à côté de son nom
+        let p = leader;
+        for (let k = 0; k < 4; k++, p = next(p)) {
+            G.turnPlayer = p;
+            let card;
+            if (isHuman(p)) {
+                await ensureViewer(p);
+                card = await askCard(p);
+            } else {
+                setMsg(`Joueur ${p + 1} joue…`);
+                await sleep(speed());
+                card = aiCard(p);
+            }
+            playCard(p, card);
+            render();
+        }
+        const w = trickWinner(G.trick);
+        let pts = G.trick.reduce((s, e) => s + points(e.card), 0);
+        if (t === 7) { pts += 10; G.der = team(w.p); }
+        G.cardPts[team(w.p)] += pts;
+        G.tricksWon[team(w.p)]++;
+        G.tricks.push({ cards: G.trick.slice(), winner: w.p, points: pts });
+        G.turnPlayer = null;
+        G.trickWinnerP = w.p;      // nom du gagnant en doré + bulle
+        bubble(w.p, `Gagne le pli · ${pts} pts`, 'win');
+        setMsg(`Joueur ${w.p + 1} (${TEAM[team(w.p)]}) remporte le pli avec ${cname(w.card)} : ${pts} points` +
+               (t === 7 ? ' (dont 10 de der).' : `. C'est à lui d'entamer le pli suivant.`));
+        await trickPause();
+        delete G.bubbles[w.p];
+        G.trickWinnerP = null;
+        leader = w.p;
+        G.trick = [];
+        render();
+    }
+}
+
+function resultHTML(r) {
+    const t = r.T, d = r.D;
+    const cell = (a, b) => `<td class="t0">${a}</td><td class="t1">${b}</td>`;
+    const tn = x => `équipe ${TEAM[x]}`;
+    let v, cls = '';
+    switch (r.verdict) {
+        case 'capot': v = `Capot ! L'${tn(t)} (preneur) a fait tous les plis : elle marque 252 points${r.bel[t] ? ' + 20 de belote' : ''}.`; break;
+        case 'capot-def': v = `Capot de la défense ! L'${tn(d)} a fait tous les plis : elle marque 252 points, le preneur est dedans.`; cls = 'bad'; break;
+        case 'ok': v = `Contrat réussi : le preneur (${tn(t)}) a fait ${r.tot[t]} points contre ${r.tot[d]}, soit plus que la défense. Chaque équipe marque ses points.`; break;
+        case 'dedans': v = `Dedans ! Le preneur (${tn(t)}) n'a fait que ${r.tot[t]} points contre ${r.tot[d]} : il fallait faire plus que la défense. ` +
+                           `La défense marque 162 points${r.bel[d] ? ' + 20 de belote' : ''}` + (r.bel[t] ? ' ; le preneur garde seulement sa belote (20, imprenable).' : ' ; le preneur ne marque rien.'); cls = 'bad'; break;
+        case 'litige': v = `Litige : égalité ${r.tot[t]} à ${r.tot[d]}. La défense marque ses points ; les ${r.reserve} points du preneur sont mis en réserve et iront à l'équipe qui gagnera la prochaine donne.`; cls = 'mid'; break;
+    }
+    if (r.patWon) v += ` L'${tn(r.handWinner)} récupère aussi les ${r.patWon} points du litige précédent.`;
+    return `<h3>Fin de la donne</h3>
+        <p>Joueur ${G.taker + 1} (${tn(t)}) a pris à <span class="${RED[G.trump] ? 'r' : ''}">${SYM[G.trump]}</span> ${SUIT_NAME[G.trump]}.</p>
+        <table>
+            <tr><th></th><th class="t0">1/3</th><th class="t1">2/4</th></tr>
+            <tr><td>Plis</td>${cell(G.tricksWon[0], G.tricksWon[1])}</tr>
+            <tr><td>Cartes + 10 de der</td>${cell(r.cardPts[0], r.cardPts[1])}</tr>
+            <tr><td>Belote-rebelote</td>${cell(r.bel[0] || '–', r.bel[1] || '–')}</tr>
+            <tr><td><b>Total de la donne</b></td>${cell('<b>' + r.tot[0] + '</b>', '<b>' + r.tot[1] + '</b>')}</tr>
+            <tr><td>Marqué</td>${cell('+' + r.gain[0], '+' + r.gain[1])}</tr>
+            <tr><td><b>Score</b></td>${cell(r.before[0] + ' → <b>' + G.scores[0] + '</b>', r.before[1] + ' → <b>' + G.scores[1] + '</b>')}</tr>
+        </table>
+        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}</p>
+        <div class="verdict ${cls}">${v}</div>`;
+}
+
+async function playHand() {
+    G.players = JSON.parse(JSON.stringify(OPT.players));     // les changements de joueurs s'appliquent ici
+    defaultViewer();
+    G.dealer = next(G.dealer);
+    G.handNo++;
+    initHand();
+    G.phase = 'deal';
+    render();
+    await shuffleStep();
+    await cutStep();
+    dealFirst();
+    hook('onDeal', G);
+    sortHands();
+    render();
+    G.phase = 'bid';
+    const taken = await bidding();
+    if (!taken) {
+        G.turnPlayer = null;
+        setMsg('Personne ne prend : on ramasse les cartes et la donne passe au joueur suivant.');
+        await sleep(1800);
+        collectNoTake();
+        G.lastWinnerTeam = null;
+        G.turned = null;
+        hook('onHand', null, G);
+        return;
+    }
+    await sleep(speed());
+    G.bubbles = {};
+    dealRest();
+    sortHands();
+    detectBelote();
+    G.phase = 'play';
+    defaultViewer();
+    render();
+    await playTricks();
+    const res = scoreHand();
+    hook('onHand', res, G);
+    G.phase = 'result';
+    render();
+    await modal(resultHTML(res), [{ label: 'Donne suivante', value: 1 }, { label: 'Voir les plis', sec: true, action: showTricks }]);
+    collectAfterPlay();
+}
+
+async function endOfGame(w) {
+    const tn = `L'équipe ${TEAM[w]}`;
+    const sc = `${G.scores[0]} à ${G.scores[1]}`;
+    let again;
+    if (G.level === 1) {
+        G.firstWinner = w;
+        again = await modal(`<h3>Partie terminée</h3><p>${tn} gagne la partie (${sc}).</p>`,
+            [{ label: 'Revanche', value: 2 }, { label: 'Nouvelle partie', value: 1, sec: true }]);
+    } else if (G.level === 2) {
+        if (w === G.firstWinner) {
+            again = await modal(`<h3>Revanche terminée</h3><p>${tn} gagne aussi la revanche (${sc}) : elle remporte la partie et la revanche !</p>`,
+                [{ label: 'Nouvelle partie', value: 1 }]);
+        } else {
+            again = await modal(`<h3>Revanche terminée</h3><p>${tn} gagne la revanche (${sc}) : une partie partout. On joue la belle ?</p>`,
+                [{ label: 'Jouer la belle', value: 3 }, { label: 'Nouvelle partie', value: 1, sec: true }]);
+        }
+    } else {
+        again = await modal(`<h3>Belle terminée</h3><p>${tn} remporte la belle (${sc}) !</p>`, [{ label: 'Nouvelle partie', value: 1 }]);
+    }
+    G.level = again;
+    if (again === 1) G.firstWinner = null;
+    G.scores = [0, 0];
+    G.pat = 0;
+    saveMatch();
+    hook('onGame', w, G);
+}
+
+async function main() {
+    defaultViewer();
+    render();
+    for (;;) {
+        await playHand();
+        saveMatch();
+        const w = matchWinner();
+        if (w !== null) await endOfGame(w);
+        if (TEST && TEST.stop && TEST.stop()) return;
+    }
+}
+
+// --- Fenêtres : plis, règles, options ---
+function showTricks() {
+    let h = '<h3>Plis de la donne</h3>';
+    if (!G.tricks.length && !G.trick.length) h += '<p>Aucun pli joué pour l\'instant.</p>';
+    G.tricks.forEach((t, i) => {
+        h += `<div class="trick-line"><b>Pli ${i + 1}</b> : ` + t.cards.map(e => `J${e.p + 1} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') +
+             ` → <b>J${t.winner + 1}</b> (${TEAM[team(t.winner)]}, ${t.points} pts)</div>`;
+    });
+    if (G.trick.length) h += `<div class="trick-line"><b>En cours</b> : ` + G.trick.map(e => `J${e.p + 1} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') + '</div>';
+    modal(h, [{ label: 'Fermer', value: 1 }], 2);
+}
+
+function showRules() {
+    modal(`<h3>Règles de la belote</h3>
+    <h4>Cartes et points</h4>
+    <ul><li><b>Atout</b> : Valet 20, 9 14, As 11, 10 10, Roi 4, Dame 3, 8 et 7 : 0.</li>
+        <li><b>Hors atout</b> : As 11, 10 10, Roi 4, Dame 3, Valet 2, 9-8-7 : 0.</li>
+        <li>Total 152 + <b>10 de der</b> (dernier pli) = 162 points.</li></ul>
+    <h4>Distribution et annonces</h4>
+    <ul><li>Le donneur distribue 3 puis 2 cartes à chacun et retourne la 21e.</li>
+        <li>1er tour : chacun peut <b>prendre</b> à la couleur retournée. 2e tour : chacun peut choisir une <b>autre</b> couleur. Si personne ne prend, on redistribue.</li>
+        <li>Le preneur reçoit la carte retournée + 2 cartes, les autres 3 cartes.</li></ul>
+    <h4>Le jeu de la carte</h4>
+    <ul><li>On doit <b>fournir</b> la couleur demandée.</li>
+        <li>Sans la couleur : si le <b>partenaire est maître</b>, on peut se défausser librement ; sinon on doit <b>couper</b> (jouer atout).</li>
+        <li>Si un adversaire a déjà coupé : il faut <b>surcouper</b> si on peut, sinon <b>sous-couper</b> (jouer un atout plus petit).</li>
+        <li>Quand l'<b>atout est demandé</b>, ou dès qu'on joue atout, il faut <b>monter</b> au-dessus du plus fort atout du pli si on le peut (même sur son partenaire).</li>
+        <li>Sans couleur ni atout : on joue n'importe quelle carte.</li></ul>
+    <h4>Décompte</h4>
+    <ul><li><b>Belote-rebelote</b> (Roi + Dame d'atout dans la même main) : 20 points, toujours gardés.</li>
+        <li>Le preneur doit faire <b>plus de points que la défense</b> (belote comprise). Sinon il est <b>dedans</b> : la défense marque 162.</li>
+        <li><b>Égalité</b> : litige, les points du preneur sont mis en réserve pour l'équipe qui gagnera la donne suivante.</li>
+        <li><b>Capot</b> (tous les plis) : 252 points.</li>
+        <li>La partie se joue en <b>${GOAL} points</b>, puis revanche et belle éventuelle.</li></ul>`,
+    [{ label: 'Fermer', value: 1 }], 2);
+}
+
+async function showOptions() {
+    const sel = (p) => `<select data-p="${p}" class="o-type"><option value="h" ${OPT.players[p].human ? 'selected' : ''}>Humain</option><option value="c" ${!OPT.players[p].human ? 'selected' : ''}>Ordinateur</option></select>`;
+    const chk = (p) => `<label><input type="checkbox" data-p="${p}" class="o-vis" ${OPT.players[p].visible ? 'checked' : ''}> cartes visibles</label>`;
+    let rows = '';
+    for (let p = 0; p < 4; p++) rows += `<div class="opt-row"><span>Joueur ${p + 1} <small>(${TEAM[team(p)]})</small></span>${sel(p)}${chk(p)}</div>`;
+    const v = await modal(`<h3>Options</h3>${rows}
+        <p style="font-size:12px;color:#666;margin:4px 0">Humain / ordinateur : appliqué à la prochaine donne. Plusieurs humains = jeu à plusieurs sur le même appareil.</p>
+        <div class="opt-row"><label><input type="checkbox" id="o-mast" ${OPT.markMasters ? 'checked' : ''}> Marquer mes cartes maîtresses (★)</label></div>
+        <div class="opt-row"><label><input type="checkbox" id="o-grey" ${OPT.greyIllegal ? 'checked' : ''}> Griser les cartes non jouables</label></div>
+        <div class="opt-row"><label><input type="checkbox" id="o-pause" ${OPT.pauseTrick ? 'checked' : ''}> Attendre un appui après chaque pli</label></div>
+        <div class="opt-row"><span>Vitesse de l'ordinateur</span><select id="o-speed">${Object.keys(SPEED).map(k => `<option ${OPT.speed === k ? 'selected' : ''}>${k}</option>`).join('')}</select></div>`,
+        [{ label: 'Enregistrer', value: 'save' }, { label: 'Nouvelle partie', value: 'new', sec: true }, { label: 'Annuler', value: 'cancel', sec: true }], 2);
+    if (v === 'new') {
+        if (confirm('Recommencer une nouvelle partie à 0 – 0 ?')) { saveJSON('belote_match', null); location.reload(); }
+        return;
+    }
+    if (v !== 'save') return;
+    const box = $('box2');   // la fenêtre est cachée mais son contenu est encore là
+    const players = [0, 1, 2, 3].map(p => ({
+        human: box.querySelector(`.o-type[data-p="${p}"]`).value === 'h',
+        visible: box.querySelector(`.o-vis[data-p="${p}"]`).checked,
+    }));
+    OPT = Object.assign({}, OPT, {
+        players,
+        markMasters: box.querySelector('#o-mast').checked,
+        greyIllegal: box.querySelector('#o-grey').checked,
+        pauseTrick: box.querySelector('#o-pause').checked,
+        speed: box.querySelector('#o-speed').value,
+    });
+    saveJSON('belote_options', OPT);
+    players.forEach((pl, p) => { G.players[p].visible = pl.visible; });   // visibilité : tout de suite
+    render();
+}
+
+$('hand').addEventListener('click', onHandClick);
+$('btn-tricks').addEventListener('click', showTricks);
+$('btn-rules').addEventListener('click', showRules);
+$('btn-options').addEventListener('click', showOptions);
+
+// Accès pour les tests automatiques
+window.belote = { G, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT };
+
+main();
+</script>
+</body>
+</html>
