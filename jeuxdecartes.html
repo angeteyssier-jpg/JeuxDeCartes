@@ -220,6 +220,9 @@
     .opt-block[hidden] { display: none; }
     .seg-title { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
     .seg { display: flex; gap: 6px; }
+    .names-grid { display: grid; grid-template-columns: auto 1fr 1fr; gap: 6px; align-items: center; font-size: 12px; font-weight: 700; }
+    .names-grid input { min-width: 0; font-size: 14px; padding: 6px 7px; border-radius: 8px; border: 2px solid transparent; background: rgba(255,255,255,0.92); color: #222; }
+    .names-grid input:focus { border-color: #ffd54f; outline: none; }
     .seg button { flex: 1; background: rgba(255,255,255,0.12); color: #fff; border: 2px solid transparent; border-radius: 9px; padding: 7px 4px; font-size: 13px; font-weight: 700; }
     .seg button.sel { background: #fff; color: #0b5d2b; border-color: #ffd54f; }
     .vals { font-size: 12px; line-height: 1.45; margin-top: 7px; }
@@ -256,6 +259,9 @@
     .box select { font-size: 15px; padding: 4px; }
     .box label { font-size: 14px; }
     .opt-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 0; border-bottom: 1px solid #eee; }
+    .opt-player { flex-wrap: wrap; }
+    .opt-player .o-name { flex: 1 1 100px; min-width: 0; font-size: 15px; padding: 5px 7px; border: 1px solid #bbb; border-radius: 7px; }
+    .opt-player small { color: #777; }
     .trick-line { font-size: 14px; padding: 3px 0; border-bottom: 1px solid #eee; }
     .ready { text-align: center; }
     .ready p { font-size: 16px; }
@@ -270,6 +276,36 @@
         :root { --cw: 48px; --ch: 70px; --mw: 26px; --mh: 37px; --tw: 44px; --th: 64px; }
         header .title { display: none; }
     }
+
+    /* Fin de partie */
+    .endbanner { background: #fff3c4; border: 2px solid #e0a800; border-radius: 10px; padding: 8px 10px; margin: 0 0 10px; text-align: center; font-weight: 700; color: #5d4300; }
+    .endbanner b { font-size: 18px; }
+    .endgame { text-align: center; }
+    .endgame .trophy { font-size: 56px; line-height: 1; animation: trophy 0.9s ease-out; }
+    @keyframes trophy { 0% { transform: scale(0.3) rotate(-20deg); opacity: 0; } 60% { transform: scale(1.15) rotate(6deg); } 100% { transform: none; } }
+    .endgame h3 { margin: 6px 0 2px; }
+    .endgame .winner { font-size: 21px; font-weight: 800; margin: 4px 0 8px; }
+    .endgame .winner.t0 { color: #0d6fb0; } .endgame .winner.t1 { color: #c4511a; }
+    .endgame .final { font-size: 26px; font-weight: 800; margin: 4px 0; }
+    .endgame .final .t0 { color: #0d6fb0; } .endgame .final .t1 { color: #c4511a; }
+    .endgame .detail { font-size: 13px; color: #555; margin: 4px 0; }
+    .endgame .next { font-size: 15px; margin: 10px 0 2px; }
+
+    /* Annonce du preneur, au centre de la table */
+    #announce {
+        position: absolute; left: 50%; top: 70%; transform: translate(-50%, -50%); z-index: 30; cursor: pointer;
+        background: #062814; border: 3px solid #ffd54f; border-radius: 16px; padding: 10px 18px 8px;
+        text-align: center; min-width: 200px; max-width: 64%; box-shadow: 0 8px 24px rgba(0,0,0,0.5); animation: annIn 0.3s ease-out;
+    }
+    #announce[hidden] { display: none; }
+    #announce .who { font-size: 20px; font-weight: 800; }
+    #announce .what { font-size: 42px; font-weight: 900; line-height: 1.1; margin: 2px 0 4px; }
+    #announce .what.red { color: #ff6b6b; }
+    #announce .sub { font-size: 13px; opacity: 0.92; line-height: 1.35; }
+    #announce .tap { font-size: 11px; opacity: 0.6; margin-top: 5px; }
+    @keyframes annIn { from { transform: translate(-50%, -50%) scale(0.6); opacity: 0; } }
+    .pname.taker-pulse { background: #ffd54f; color: #222; animation: tkp 0.55s ease-in-out infinite alternate; }
+    @keyframes tkp { to { box-shadow: 0 0 0 7px rgba(255,213,79,0.45); } }
 
     /* ===================== SOLITAIRE ===================== */
     #sol { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; background: #0b5d2b; max-width: 900px; margin: 0 auto; }
@@ -317,6 +353,7 @@
         <button class="top-btn" id="btn-options" title="Options">⚙</button>
     </header>
     <main id="table">
+        <div id="announce" hidden></div>
         <div id="trump-badge" hidden><span class="lbl">Atout</span><span class="sym" id="trump-sym"></span><span class="who" id="trump-who"></span></div>
         <div id="hand-pts" hidden title="Points de la donne (toucher : feuille de marque)"></div>
         <div class="seat seat-left" id="seat-3"></div>
@@ -354,7 +391,16 @@
     <div class="opt-block" id="sol-block">
         <div class="seg-title">Solitaire : pioche</div>
         <div class="seg"><button data-draw="1">1 carte à la fois</button><button data-draw="3">3 cartes à la fois</button></div>
+        <div class="seg-title" style="margin-top:9px">Donnes</div>
+        <div class="seg"><button data-winnable="1">Toujours gagnables</button><button data-winnable="0">Au hasard</button></div>
         <div class="vals" id="sol-vals"></div>
+    </div>
+    <div class="opt-block" id="names-block">
+        <div class="seg-title">Joueurs <small style="font-weight:400;opacity:.8">(laisser vide = « Joueur 1 », etc.)</small></div>
+        <div class="names-grid">
+            <span class="t0">Équipe 1/3</span><input data-name="0" maxlength="12" placeholder="Joueur 1 (en bas)"><input data-name="2" maxlength="12" placeholder="Joueur 3 (en face)">
+            <span class="t1">Équipe 2/4</span><input data-name="1" maxlength="12" placeholder="Joueur 2 (à droite)"><input data-name="3" maxlength="12" placeholder="Joueur 4 (à gauche)">
+        </div>
     </div>
     <div class="opt-block" id="ann-block">
         <div class="seg-title">Annonces</div>
@@ -395,7 +441,7 @@
 
 <script>
 'use strict';
-const VERSION = '2.1';            // à reporter dans jeuxdecartes-todo.md à chaque livraison
+const VERSION = '2.3';            // à reporter dans jeuxdecartes-todo.md à chaque livraison
 /* =====================================================================
    BELOTE — d'après l'ancien programme Turbo Pascal BELOTE.PAS
    Joueurs 1 à 4 (internes 0 à 3), équipes 1/3 et 2/4, jeu dans le sens
@@ -572,7 +618,7 @@ function explainIllegal(p, card) {
         return `Tout atout : il faut toujours monter dans la couleur demandée. Le ${cname(n.best)} est sur le tapis, vous devez jouer plus fort : ${list(n.higher)}.`;
     }
     const i = trickInfo(p);
-    const who = `le joueur ${i.winner.p + 1}, ${i.partnerMaster ? 'votre partenaire' : 'un adversaire'}`;
+    const who = `${pnl(i.winner.p)}, ${i.partnerMaster ? 'votre partenaire' : 'un adversaire'}`;
     if (i.led === i.T) {
         if (card.s !== i.T) return `L'atout ${SYM[i.T]} est demandé : vous devez jouer atout, vous en avez (${list(i.trumps)}).`;
         return `L'atout est demandé : il faut toujours monter. Le ${cname(i.bestTrump)} est sur le tapis, vous devez jouer plus fort : ${list(i.higher)}.`;
@@ -651,7 +697,7 @@ function annonceSummary() {
     const A = G.annonces;
     if (!A || A.list.every(l => !l.length)) return 'Aucune annonce.';
     if (A.tie) return 'Annonces à égalité parfaite : personne ne les marque.';
-    const det = A.list.map((l, p) => (team(p) === A.winner && l.length ? `J${p + 1} : ${l.map(a => `${a.label} (${a.value})`).join(', ')}` : null)).filter(Boolean).join(' ; ');
+    const det = A.list.map((l, p) => (team(p) === A.winner && l.length ? `${ps(p)} : ${l.map(a => `${a.label} (${a.value})`).join(', ')}` : null)).filter(Boolean).join(' ; ');
     return `Annonces : l'équipe ${TEAM[A.winner]} marque ${A.points[A.winner]} (${det}).`;
 }
 
@@ -1036,7 +1082,16 @@ let viewer = 0;   // joueur vu en bas de l'écran
 
 const humans = () => [0, 1, 2, 3].filter(p => G.players[p].human);
 const isHuman = p => G.players[p].human;
-function pname(p) { return `Joueur ${p + 1}${p === viewer && isHuman(p) && humans().length === 1 ? ' (vous)' : ''}`; }
+// Noms des joueurs (réglables dans ⚙ et sur l'écran de départ)
+const cleanName = t => String(t || '').replace(/[<>&"]/g, '').trim().slice(0, 12);
+const pname0 = p => (OPT.players[p] && OPT.players[p].name) || '';
+const pn = p => pname0(p) || `Joueur ${p + 1}`;                                    // « Pierre » ou « Joueur 1 »
+const ps = p => { const n = pname0(p); return n ? (n.length > 8 ? n.slice(0, 7) + '.' : n) : `J${p + 1}`; };   // court : « Pierre » ou « J1 »
+const pnl = p => pname0(p) || `le joueur ${p + 1}`;                               // dans une phrase
+const pau = p => (pname0(p) ? `à ${pname0(p)}` : `au joueur ${p + 1}`);
+const named = () => [0, 1, 2, 3].some(p => pname0(p));
+const teamLong = t => (named() ? `${TEAM[t]} (${pn(t)} et ${pn(t + 2)})` : TEAM[t]);
+function pname(p) { return `${pn(p)}${p === viewer && isHuman(p) && humans().length === 1 ? ' (vous)' : ''}`; }
 const speed = () => SPEED[OPT.speed] || 650;
 const showFace = p => G.players[p].visible || (p === viewer && isHuman(p));
 
@@ -1071,8 +1126,8 @@ function render() {
     const lvl = ['Partie', 'Revanche', 'Belle'][G.level - 1];
     let sb = `<span class="sc t0">1/3 <b>${G.scores[0]}</b></span><span class="sc t1">2/4 <b>${G.scores[1]}</b></span>` +
              `<span class="chip">${lvl} · ${G.goal}</span>`;
-    if (G.contract) sb += `<span class="chip">${valueTxt(G.contract)} <b style="color:${G.contract.type === 'suit' && RED[G.contract.suit] ? '#ff8a80' : '#fff'}">${contractShort(G.contract)}</b> · J${G.taker + 1}${G.contract.coinche > 1 ? ' · ×' + G.contract.coinche : ''}</span>`;
-    else if (G.trump) sb += `<span class="chip">Atout <b class="${RED[G.trump] ? 'r' : ''}" style="color:${RED[G.trump] ? '#ff8a80' : '#fff'}">${SYM[G.trump]}</b> · J${G.taker + 1}</span>`;
+    if (G.contract) sb += `<span class="chip">${valueTxt(G.contract)} <b style="color:${G.contract.type === 'suit' && RED[G.contract.suit] ? '#ff8a80' : '#fff'}">${contractShort(G.contract)}</b> · ${ps(G.taker)}${G.contract.coinche > 1 ? ' · ×' + G.contract.coinche : ''}</span>`;
+    else if (G.trump) sb += `<span class="chip">Atout <b class="${RED[G.trump] ? 'r' : ''}" style="color:${RED[G.trump] ? '#ff8a80' : '#fff'}">${SYM[G.trump]}</b> · ${ps(G.taker)}</span>`;
     if (G.pat) sb += `<span class="chip">Litige : ${G.pat}</span>`;
     $('scorebar').innerHTML = sb;
 
@@ -1105,13 +1160,13 @@ function render() {
         tb.querySelector('.lbl').textContent = c.type === 'suit' ? 'Atout' : 'Contrat';
         $('trump-sym').textContent = c.type === 'suit' ? SYM[c.suit] : c.type;
         $('trump-sym').className = 'sym' + (c.type !== 'suit' ? ' txt' : RED[c.suit] ? ' red' : '');
-        $('trump-who').innerHTML = `${valueTxt(c)} · J${G.taker + 1}` +
+        $('trump-who').innerHTML = `${valueTxt(c)} · ${ps(G.taker)}` +
             (c.coinche > 1 ? `<br><span class="coin">${c.coinche === 4 ? 'Surcoinché ×4' : 'Coinché ×2'}</span>` : '');
     } else if (G.trump) {                      // classique : l'atout
         tb.querySelector('.lbl').textContent = 'Atout';
         $('trump-sym').textContent = SYM[G.trump];
         $('trump-sym').className = 'sym' + (RED[G.trump] ? ' red' : '');
-        $('trump-who').textContent = `pris par J${G.taker + 1}`;
+        $('trump-who').textContent = `pris par ${ps(G.taker)}`;
     }
 
     // Joueurs autour de la table
@@ -1120,8 +1175,8 @@ function render() {
         const el = $('seat-' + seat);
         el.innerHTML = '';
         const name = document.createElement('div');
-        name.className = `pname t${team(p)} ${G.turnPlayer === p ? 'turn' : ''} ${G.trickWinnerP === p ? 'winner' : ''}`;
-        name.innerHTML = `Joueur ${p + 1}` + seatBadges(p);
+        name.className = `pname t${team(p)} ${G.turnPlayer === p ? 'turn' : ''} ${G.trickWinnerP === p ? 'winner' : ''} ${G.takerPulse && G.taker === p ? 'taker-pulse' : ''}`;
+        name.innerHTML = `${pn(p)}` + seatBadges(p);
         const minis = document.createElement('div');
         minis.className = 'minis';
         for (const c of G.hands[p]) minis.appendChild(cardEl(showFace(p) ? c : null));
@@ -1156,7 +1211,7 @@ function render() {
         const d = document.createElement('div');
         d.className = 'bidnow';
         d.innerHTML = b ? `${valueTxt(b)} <span style="color:${b.type === 'suit' && RED[b.suit] ? '#ff8a80' : '#fff'}">${contractShort(b)}</span>` +
-                          `<small>J${b.by + 1}${b.coinche > 1 ? ' · coinché' : ''}</small>`
+                          `<small>${ps(b.by)}${b.coinche > 1 ? ' · coinché' : ''}</small>`
                         : `<small>Enchères</small>…`;
         tu.appendChild(d);
     }
@@ -1169,7 +1224,7 @@ function render() {
     // Ma main (joueur vu en bas)
     const me = viewer;
     const myB = G.bubbles[me];
-    $('mylabel').innerHTML = `<span class="pname t${team(me)} ${G.turnPlayer === me ? 'turn' : ''} ${G.trickWinnerP === me ? 'winner' : ''}">Joueur ${me + 1}` +
+    $('mylabel').innerHTML = `<span class="pname t${team(me)} ${G.turnPlayer === me ? 'turn' : ''} ${G.trickWinnerP === me ? 'winner' : ''} ${G.takerPulse && G.taker === me ? 'taker-pulse' : ''}">${pn(me)}` +
         `${isHuman(me) ? (humans().length === 1 ? ' (vous)' : '') : ' (ordinateur)'} — équipe ${TEAM[team(me)]}` +
         seatBadges(me) + `</span>` + (myB ? ` <span class="bubble ${myB.cls}">${myB.text}</span>` : '');
     const hand = $('hand');
@@ -1235,7 +1290,7 @@ async function ensureViewer(p) {
     if (privacy) {
         document.getElementById('table').style.visibility = 'hidden';
         document.getElementById('hand').style.visibility = 'hidden';
-        await modal(`<div class="ready"><h3>Joueur ${p + 1}, à vous !</h3><p>Passez l'appareil au joueur ${p + 1}, puis touchez « Je suis prêt ».</p></div>`,
+        await modal(`<div class="ready"><h3>${pn(p)}, à vous !</h3><p>Passez l'appareil ${pau(p)}, puis touchez « Je suis prêt ».</p></div>`,
                     [{ label: 'Je suis prêt', value: 1 }]);
         document.getElementById('table').style.visibility = '';
         document.getElementById('hand').style.visibility = '';
@@ -1255,12 +1310,12 @@ async function shuffleStep() {
     const d = G.dealer;
     if (G.firstHand) doShuffle = true;
     else if (isHuman(d)) {
-        setMsg(`Joueur ${d + 1}, vous donnez. Mélanger le jeu ? (Sans mélange, les cartes gardent l'ordre des plis.)`);
+        setMsg(`${pn(d)}, vous donnez. Mélanger le jeu ? (Sans mélange, les cartes gardent l'ordre des plis.)`);
         doShuffle = await ask([{ label: 'Mélanger', value: true }, { label: 'Ne pas mélanger', value: false, cls: 'alt' }]);
     } else {
         const sameTeam = G.lastWinnerTeam !== null && G.lastWinnerTeam === team(d);
         doShuffle = sameTeam ? false : Math.random() < 0.1;
-        setMsg(`Joueur ${d + 1} donne et ${doShuffle ? 'mélange le jeu.' : 'ne mélange pas.'}`);
+        setMsg(`${pn(d)} donne et ${doShuffle ? 'mélange le jeu.' : 'ne mélange pas.'}`);
         await sleep(speed() * 1.5);
     }
     if (doShuffle) shuffleDeck();
@@ -1275,12 +1330,12 @@ async function cutStep() {
         const wrap = document.createElement('div');
         wrap.innerHTML = `<input type="range" min="2" max="30" value="16" id="cut-range"> <b id="cut-val">16</b> cartes`;
         wrap.querySelector('input').addEventListener('input', e => { wrap.querySelector('#cut-val').textContent = e.target.value; });
-        setMsg(`Joueur ${c + 1}, vous coupez : combien de cartes ?`);
+        setMsg(`${pn(c)}, vous coupez : combien de cartes ?`);
         await ask([{ label: 'Couper', value: 1 }], wrap);
         n = parseInt(wrap.querySelector('input').value, 10);
     } else {
         n = 2 + Math.floor(Math.random() * 28);
-        setMsg(`Joueur ${c + 1} coupe ${n} cartes.`);
+        setMsg(`${pn(c)} coupe ${n} cartes.`);
         await sleep(speed() * 1.5);
     }
     G.deck = G.deck.slice(n).concat(G.deck.slice(0, n));
@@ -1299,7 +1354,7 @@ async function bidding() {
             take = await ask([{ label: `Prendre à <span class="${RED[t] ? 'r' : 'k'}">${SYM[t]}</span>`, value: true },
                               { label: 'Passer', value: false, cls: 'alt' }]);
         } else {
-            setMsg(`Joueur ${p + 1} réfléchit…`);
+            setMsg(`${pn(p)} réfléchit…`);
             await sleep(speed());
             take = !(TEST && TEST.noTake) && aiBid(p, 1) !== null;
         }
@@ -1317,7 +1372,7 @@ async function bidding() {
             suit = await ask(SUITS.filter(s => s !== t).map(s => ({ label: `<span class="${RED[s] ? 'r' : 'k'}">${SYM[s]}</span> ${SUIT_NAME[s]}`, value: s }))
                 .concat([{ label: 'Passer', value: null, cls: 'alt' }]));
         } else {
-            setMsg(`Joueur ${p + 1} réfléchit…`);
+            setMsg(`${pn(p)} réfléchit…`);
             await sleep(speed());
             suit = (TEST && TEST.noTake) ? null : aiBid(p, 2);
         }
@@ -1335,7 +1390,7 @@ const BID_VALUES = [80, 90, 100, 110, 120, 130, 140, 150, 160, 'capot'];
 function askCoincheAction(p, cur) {
     const allowed = cur ? (cur.capot ? [] : BID_VALUES.filter(v => v === 'capot' || v > cur.value)) : BID_VALUES.slice();
     const canCoinche = !!cur && !cur.capot && team(cur.by) !== team(p);
-    setMsg(cur ? `Enchère : ${valueTxt(cur)} ${contractTxt(cur)} (J${cur.by + 1}${team(cur.by) === team(p) ? ', votre partenaire' : ''}). ` +
+    setMsg(cur ? `Enchère : ${valueTxt(cur)} ${contractTxt(cur)} (${ps(cur.by)}${team(cur.by) === team(p) ? ', votre partenaire' : ''}). ` +
                  `Choisissez une valeur puis une couleur pour monter${canCoinche ? ', coinchez' : ''} ou passez.`
                : 'À vous d\'annoncer : choisissez une valeur puis une couleur (ou SA / TA), ou passez.');
     return new Promise(resolve => {
@@ -1393,7 +1448,7 @@ async function coincheBidding() {
             await ensureViewer(p);
             a = await askCoincheAction(p, cur);
         } else {
-            setMsg(`Joueur ${p + 1} réfléchit…`);
+            setMsg(`${pn(p)} réfléchit…`);
             await sleep(speed());
             a = (TEST && TEST.noTake) ? { kind: 'pass' } : aiCoincheAction(p, cur, bids);
         }
@@ -1418,7 +1473,7 @@ async function coincheBidding() {
                 let yes;
                 if (isHuman(q)) {
                     await ensureViewer(q);
-                    setMsg(`Joueur ${q + 1} : votre contrat ${valueTxt(cur)} ${contractTxt(cur)} est coinché. Surcoincher (×4) ?`);
+                    setMsg(`${pn(q)} : votre contrat ${valueTxt(cur)} ${contractTxt(cur)} est coinché. Surcoincher (×4) ?`);
                     yes = await ask([{ label: 'Surcoincher ×4', value: true }, { label: 'Non', value: false, cls: 'alt' }]);
                 } else {
                     await sleep(speed());
@@ -1448,7 +1503,7 @@ function askCard(p) {
     if (!G.trick.length) ctx += ' : vous entamez le pli.';
     else {
         const w = trickWinner(G.trick);
-        ctx += ` — demandé : ${SYM[G.trick[0].card.s]} · maître : J${w.p + 1} ` +
+        ctx += ` — demandé : ${SYM[G.trick[0].card.s]} · maître : ${ps(w.p)} ` +
                `(${w.p === partner(p) ? 'partenaire' : 'adversaire'}) avec ${cname(w.card)}`;
     }
     if (legal.length === 1) ctx += ' (une seule carte possible)';
@@ -1497,7 +1552,7 @@ async function playTricks() {
                 await ensureViewer(p);
                 card = await askCard(p);
             } else {
-                setMsg(`Joueur ${p + 1} joue…`);
+                setMsg(`${pn(p)} joue…`);
                 await sleep(speed());
                 card = aiCard(p);
             }
@@ -1513,7 +1568,7 @@ async function playTricks() {
         G.turnPlayer = null;
         G.trickWinnerP = w.p;      // nom du gagnant en doré + bulle
         bubble(w.p, `Gagne le pli · ${pts} pts`, 'win');
-        setMsg(`Joueur ${w.p + 1} (${TEAM[team(w.p)]}) remporte le pli avec ${cname(w.card)} : ${pts} points` +
+        setMsg(`${pn(w.p)} (${TEAM[team(w.p)]}) remporte le pli avec ${cname(w.card)} : ${pts} points` +
                (t === 7 ? ' (dont 10 de der).' : `. C'est à lui d'entamer le pli suivant.`) +
                (t === 0 && G.annonces ? ' ' + annonceSummary() : ''));
         await trickPause();
@@ -1540,7 +1595,7 @@ function resultHTML(r) {
     }
     if (r.patWon) v += ` L'${tn(r.handWinner)} récupère aussi les ${r.patWon} points du litige précédent.`;
     return `<h3>Fin de la donne</h3>
-        <p>Joueur ${G.taker + 1} (${tn(t)}) a pris à <span class="${RED[G.trump] ? 'r' : ''}">${SYM[G.trump]}</span> ${SUIT_NAME[G.trump]}.</p>
+        <p>${pn(G.taker)} (${tn(t)}) a pris à <span class="${RED[G.trump] ? 'r' : ''}">${SYM[G.trump]}</span> ${SUIT_NAME[G.trump]}.</p>
         <table>
             <tr><th></th><th class="t0">1/3</th><th class="t1">2/4</th></tr>
             <tr><td>Plis</td>${cell(G.tricksWon[0], G.tricksWon[1])}</tr>
@@ -1551,7 +1606,7 @@ function resultHTML(r) {
             <tr><td>Marqué</td>${cell('+' + r.gain[0], '+' + r.gain[1])}</tr>
             <tr><td><b>Score</b></td>${cell(r.before[0] + ' → <b>' + G.scores[0] + '</b>', r.before[1] + ' → <b>' + G.scores[1] + '</b>')}</tr>
         </table>
-        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
+        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : ${pn(G.belote.holder)}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
         <div class="verdict ${cls}">${v}</div>`;
 }
 
@@ -1574,7 +1629,7 @@ function resultHTMLCoinche(r) {
         case 'capot-chute': v = `Capot annoncé mais chuté : la défense marque 500 points${r.bel[d] ? ' + 20 de belote' : ''}.`; cls = 'bad'; break;
     }
     return `<h3>Fin de la donne</h3>
-        <p>Contrat : <b>${ctr}</b> par le joueur ${G.taker + 1} (${tn(t)})${coin}.<br>
+        <p>Contrat : <b>${ctr}</b> par ${pnl(G.taker)} (${tn(t)})${coin}.<br>
         <small>${c.capot ? 'Il fallait faire tous les plis.' : `Il fallait au moins ${c.value} points et plus que la défense${G.rules.annonces && !G.rules.annoncesContrat ? ' (annonces non comprises)' : ''}.`}</small></p>
         <table>
             <tr><th></th><th class="t0">1/3</th><th class="t1">2/4</th></tr>
@@ -1586,8 +1641,39 @@ function resultHTMLCoinche(r) {
             <tr><td>Marqué</td>${cell('+' + r.gain[0], '+' + r.gain[1])}</tr>
             <tr><td><b>Score</b></td>${cell(r.before[0] + ' → <b>' + G.scores[0] + '</b>', r.before[1] + ' → <b>' + G.scores[1] + '</b>')}</tr>
         </table>
-        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : joueur ${G.belote.holder + 1}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
+        <p style="font-size:13px;color:#555">10 de der : équipe ${TEAM[r.der]}.${G.belote.holder !== null ? ` Belote-rebelote : ${pn(G.belote.holder)}.` : ''}${G.rules.annonces ? ' ' + annonceSummary() : ''}</p>
         <div class="verdict ${cls}">${v}</div>`;
+}
+
+// Annonce du preneur au centre de la table, avec une pause (toucher pour passer)
+async function announceTaker() {
+    const p = G.taker, c = G.contract;
+    const me = isHuman(p) && p === viewer && humans().length === 1;
+    const place = ['', 'à\u00a0droite', 'en\u00a0face', 'à\u00a0gauche'][(p - viewer + 4) % 4];
+    const red = c ? (c.type === 'suit' && RED[c.suit]) : RED[G.trump];
+    const what = c ? `${valueTxt(c)} ${c.type === 'suit' ? SYM[c.suit] : c.type}` : SYM[G.trump];
+    const name = c ? (c.type === 'suit' ? 'atout ' + SUIT_NAME[c.suit] : contractTxt(c).toLowerCase()) : 'atout ' + SUIT_NAME[G.trump];
+    const coin = c && c.coinche > 1 ? (c.coinche === 4 ? 'Surcoinché ×4' : 'Coinché ×2') : '';
+    const partnerTxt = !me && humans().length === 1 && team(p) === team(viewer) ? ' (votre partenaire)' : '';
+    const el = $('announce');
+    el.innerHTML = `<div class="who">${me ? 'Vous prenez' : `${pn(p)} prend`}</div>` +
+        `<div class="what${red ? ' red' : ''}">${what}</div>` +
+        `<div class="sub">${name.replace(' ', '\u00a0')} · équipe\u00a0${TEAM[team(p)]}${partnerTxt}${place && !me ? ' · ' + place : ''}${coin ? '<br><b style="color:#ff8a80">' + coin + '</b>' : ''}</div>` +
+        `<div class="tap">toucher pour continuer</div>`;
+    el.hidden = false;
+    G.phase = 'taken';                // les enchères sont finies (on n'affiche plus « Enchères »)
+    G.takerPulse = true;
+    G.turnPlayer = null;
+    render();
+    setMsg(`${me ? 'Vous prenez' : `${pn(p)}${partnerTxt} prend`} : ${c ? `${valueTxt(c)} ${contractTxt(c)}${coin ? ', ' + coin.toLowerCase() : ''}` : 'atout ' + SYM[G.trump] + ' ' + SUIT_NAME[G.trump]}.`);
+    await new Promise(resolve => {
+        const done = () => { clearTimeout(tm); el.removeEventListener('click', done); resolve(); };
+        const tm = setTimeout(done, ms(Math.max(2600, speed() * 3.5)));
+        el.addEventListener('click', done);
+    });
+    el.hidden = true;
+    G.takerPulse = false;
+    render();
 }
 
 async function playHand() {
@@ -1627,6 +1713,7 @@ async function playHand() {
         return;
     }
     await sleep(speed());
+    await announceTaker();            // qui prend, à quoi : bien visible avant de jouer
     G.bubbles = {};
     if (G.game !== 'coinche') dealRest();
     sortHands();
@@ -1643,31 +1730,44 @@ async function playHand() {
     hook('onHand', res, G);
     G.phase = 'result';
     render();
-    await modal(G.game === 'coinche' ? resultHTMLCoinche(res) : resultHTML(res),
-                [{ label: 'Donne suivante', value: 1 }, { label: 'Voir les plis', sec: true, action: showTricks }]);
+    const over = matchWinner();       // la partie est-elle finie avec cette donne ?
+    const banner = over === null ? '' : `<div class="endbanner">🏆 Fin de la ${['partie', 'revanche', 'belle'][G.level - 1]} : l'équipe ${teamLong(over)} gagne\u00a0!<br><b><span class="t0">${G.scores[0]}</span> – <span class="t1">${G.scores[1]}</span></b></div>`;
+    await modal(banner + (G.game === 'coinche' ? resultHTMLCoinche(res) : resultHTML(res)),
+                [{ label: over === null ? 'Donne suivante' : 'Voir le résultat', value: 1 }, { label: 'Voir les plis', sec: true, action: showTricks }]);
     collectAfterPlay();
 }
 
 async function endOfGame(w) {
-    const tn = `L'équipe ${TEAM[w]}`;
-    const sc = `${G.scores[0]} à ${G.scores[1]}`;
-    let again;
-    if (G.level === 1) {
-        G.firstWinner = w;
-        again = await modal(`<h3>Partie terminée</h3><p>${tn} gagne la partie (${sc}).</p>`,
-            [{ label: 'Revanche', value: 2 }, { label: 'Nouvelle partie', value: 1, sec: true }]);
-    } else if (G.level === 2) {
-        if (w === G.firstWinner) {
-            again = await modal(`<h3>Revanche terminée</h3><p>${tn} gagne aussi la revanche (${sc}) : elle remporte la partie et la revanche !</p>`,
-                [{ label: 'Nouvelle partie', value: 1 }]);
-        } else {
-            again = await modal(`<h3>Revanche terminée</h3><p>${tn} gagne la revanche (${sc}) : une partie partout. On joue la belle ?</p>`,
-                [{ label: 'Jouer la belle', value: 3 }, { label: 'Nouvelle partie', value: 1, sec: true }]);
-        }
-    } else {
-        again = await modal(`<h3>Belle terminée</h3><p>${tn} remporte la belle (${sc}) !</p>`, [{ label: 'Nouvelle partie', value: 1 }]);
-    }
+    const LV = ['Partie', 'Revanche', 'Belle'];
+    const hands = G.history.filter(e => !e.end && e.level === G.level).length;
     G.history.push({ end: true, level: G.level, winner: w, scores: G.scores.slice() });
+    const hs = humans(), me = hs.length === 1 ? hs[0] : null;
+    const winTxt = me === null ? `L'équipe ${teamLong(w)} gagne\u00a0!`
+                 : team(me) === w ? 'Bravo, votre équipe gagne\u00a0!' : `L'équipe ${teamLong(w)} gagne…`;
+    // où en est-on dans « partie, revanche, belle » ?
+    let nextTxt, buttons;
+    if (G.level === 1) {
+        nextTxt = `L'équipe ${TEAM[1 - w]} demande sa revanche ?`;
+        buttons = [{ label: 'Revanche', value: 2 }, { label: 'Nouvelle partie', value: 1, sec: true }];
+    } else if (G.level === 2 && w === G.firstWinner) {
+        nextTxt = `L'équipe ${TEAM[w]} remporte la partie <b>et</b> la revanche !`;
+        buttons = [{ label: 'Nouvelle partie', value: 1 }];
+    } else if (G.level === 2) {
+        nextTxt = 'Une partie partout : on joue la belle ?';
+        buttons = [{ label: 'Jouer la belle', value: 3 }, { label: 'Nouvelle partie', value: 1, sec: true }];
+    } else {
+        nextTxt = `L'équipe ${TEAM[w]} remporte la belle, et donc la rencontre !`;
+        buttons = [{ label: 'Nouvelle partie', value: 1 }];
+    }
+    if (G.level === 1) G.firstWinner = w;
+    buttons.push({ label: 'Feuille de marque', sec: true, action: showScoreSheet });
+    saveMatch();
+    const again = await modal(`<div class="endgame"><div class="trophy">🏆</div>
+        <h3>${LV[G.level - 1]} terminée</h3>
+        <div class="winner t${w}">${winTxt}</div>
+        <div class="final"><span class="t0">1/3 ${G.scores[0]}</span> – <span class="t1">2/4 ${G.scores[1]}</span></div>
+        <div class="detail">${GAME_NAME[G.game]} en ${G.goal} points · ${hands} donne${hands > 1 ? 's' : ''}</div>
+        <div class="next">${nextTxt}</div></div>`, buttons);
     G.level = again;
     if (again === 1) { G.firstWinner = null; G.history = []; }
     G.scores = [0, 0];
@@ -1706,14 +1806,70 @@ function showScoreSheet() {
         if (e.end) { rows += `<tr class="end"><td colspan="4">→ L'équipe ${TEAM[e.winner]} gagne (${e.scores[0]} – ${e.scores[1]})</td></tr>`; continue; }
         n++;
         const g = t => `${e.gain[t] ? '+' + e.gain[t] : '–'}<br><small>${e.scores[t]}</small>`;
-        rows += `<tr><td>${n}</td><td><span style="color:${e.red ? '#c62828' : 'inherit'}">${e.what}</span> J${e.taker + 1}<br><small>${e.verdict}</small></td><td class="t0">${g(0)}</td><td class="t1">${g(1)}</td></tr>`;
+        rows += `<tr><td>${n}</td><td><span style="color:${e.red ? '#c62828' : 'inherit'}">${e.what}</span> ${ps(e.taker)}<br><small>${e.verdict}</small></td><td class="t0">${g(0)}</td><td class="t1">${g(1)}</td></tr>`;
     }
     const html = `<h3>Feuille de marque</h3>` + (rows
-        ? `<table class="sheet"><tr><th>#</th><th>Contrat</th><th class="t0">1/3</th><th class="t1">2/4</th></tr>${rows}</table>
+        ? `<table class="sheet"><tr><th>#</th><th>Contrat</th><th class="t0">1/3${named() ? `<br><small>${ps(0)}<br>${ps(2)}</small>` : ''}</th><th class="t1">2/4${named() ? `<br><small>${ps(1)}<br>${ps(3)}</small>` : ''}</th></tr>${rows}</table>
            <p style="font-size:12px;color:#666">Pour chaque donne : points marqués, et en petit le score cumulé.</p>`
         : '<p>Aucune donne terminée pour l\'instant.</p>') +
         (G.pat ? `<p>Litige en réserve : ${G.pat} points.</p>` : '');
-    modal(html, [{ label: 'Fermer', value: 1 }], 2);
+    const btns = [{ label: 'Fermer', value: 1 }];
+    if (G.history.length) {
+        btns.push({ label: 'Enregistrer', sec: true, action: () => saveScores(false) });
+        if (canShareFiles()) btns.push({ label: 'Partager', sec: true, action: () => saveScores(true) });
+    }
+    modal(html, btns, 2);
+}
+
+// --- Enregistrer la feuille de marque dans un fichier texte ---
+function scoresText() {
+    const LV = ['Partie', 'Revanche', 'Belle'];
+    const now = new Date();
+    const L = [];
+    L.push('JEUX DE CARTES — FEUILLE DE MARQUE', '');
+    L.push(`${GAME_NAME[G.game]} en ${G.goal} points — ${now.toLocaleDateString('fr-FR')} à ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`);
+    if (G.game === 'coinche') L.push(`Valeurs SA/TA : ${variant().name}`);
+    L.push(`Annonces : ${G.rules.annonces ? 'oui' : 'non'}`, '');
+    L.push(`Équipe 1/3 : ${pn(0)} et ${pn(2)}`, `Équipe 2/4 : ${pn(1)} et ${pn(3)}`);
+    const col = (t, w) => String(t).padEnd(w);
+    const num = (t, w) => String(t).padStart(w);
+    let lastLv = 0, n = 0;
+    for (const e of G.history) {
+        if (e.level !== lastLv) {
+            lastLv = e.level; n = 0;
+            L.push('', `— ${LV[e.level - 1]} —`, col('N°', 4) + col('Contrat', 22) + col('Résultat', 16) + num('1/3', 12) + num('2/4', 12));
+        }
+        if (e.end) { L.push(`→ L'équipe ${teamLong(e.winner)} gagne : ${e.scores[0]} à ${e.scores[1]}`); continue; }
+        n++;
+        const g = t => `${e.gain[t] ? '+' + e.gain[t] : '0'} (${e.scores[t]})`;
+        L.push(col(n, 4) + col(`${e.what} ${ps(e.taker)}`, 22) + col(e.verdict, 16) + num(g(0), 12) + num(g(1), 12));
+    }
+    const last = G.history[G.history.length - 1];
+    if (last && !last.end) {
+        L.push('', `Score actuel (${LV[G.level - 1].toLowerCase()} en cours) : 1/3 ${G.scores[0]} – 2/4 ${G.scores[1]}`);
+        if (G.pat) L.push(`Litige en réserve : ${G.pat} points`);
+    }
+    L.push('', `(points de la donne, et entre parenthèses le score cumulé)`);
+    return L.join('\r\n') + '\r\n';
+}
+function scoresFileName() {
+    const d = new Date(), z = x => String(x).padStart(2, '0');
+    return `scores-${G.game}-${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}-${z(d.getHours())}h${z(d.getMinutes())}.txt`;
+}
+const canShareFiles = () => { try { return !!(navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.txt', { type: 'text/plain' })] })); } catch (e) { return false; } };
+async function saveScores(share) {
+    const text = '\ufeff' + scoresText(), name = scoresFileName();
+    if (share) {
+        try { await navigator.share({ files: [new File([text], name, { type: 'text/plain' })], title: 'Feuille de marque' }); return; }
+        catch (e) { if (e && e.name === 'AbortError') return; }   // sinon : on enregistre le fichier
+    }
+    const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: name });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    const box = $('box2'), note = box.querySelector('.saved-note') || box.insertBefore(Object.assign(document.createElement('p'), { className: 'saved-note' }), box.querySelector('.btns'));
+    note.textContent = `Fichier enregistré : ${name} (dans tes Téléchargements).`;
+    note.style.cssText = 'font-size:13px;color:#0b5d2b;font-weight:600';
 }
 
 async function showMenu() {
@@ -1760,10 +1916,10 @@ function showTricks() {
     let h = '<h3>Plis de la donne</h3>';
     if (!G.tricks.length && !G.trick.length) h += '<p>Aucun pli joué pour l\'instant.</p>';
     G.tricks.forEach((t, i) => {
-        h += `<div class="trick-line"><b>Pli ${i + 1}</b> : ` + t.cards.map(e => `J${e.p + 1} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') +
-             ` → <b>J${t.winner + 1}</b> (${TEAM[team(t.winner)]}, ${t.points} pts)</div>`;
+        h += `<div class="trick-line"><b>Pli ${i + 1}</b> : ` + t.cards.map(e => `${ps(e.p)} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') +
+             ` → <b>${ps(t.winner)}</b> (${TEAM[team(t.winner)]}, ${t.points} pts)</div>`;
     });
-    if (G.trick.length) h += `<div class="trick-line"><b>En cours</b> : ` + G.trick.map(e => `J${e.p + 1} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') + '</div>';
+    if (G.trick.length) h += `<div class="trick-line"><b>En cours</b> : ` + G.trick.map(e => `${ps(e.p)} <span class="${RED[e.card.s] ? 'r' : ''}">${cname(e.card)}</span>`).join(', ') + '</div>';
     modal(h, [{ label: 'Fermer', value: 1 }], 2);
 }
 
@@ -1814,7 +1970,7 @@ async function showOptions() {
     const sel = (p) => `<select data-p="${p}" class="o-type"><option value="h" ${OPT.players[p].human ? 'selected' : ''}>Humain</option><option value="c" ${!OPT.players[p].human ? 'selected' : ''}>Ordinateur</option></select>`;
     const chk = (p) => `<label><input type="checkbox" data-p="${p}" class="o-vis" ${OPT.players[p].visible ? 'checked' : ''}> cartes visibles</label>`;
     let rows = '';
-    for (let p = 0; p < 4; p++) rows += `<div class="opt-row"><span>Joueur ${p + 1} <small>(${TEAM[team(p)]})</small></span>${sel(p)}${chk(p)}</div>`;
+    for (let p = 0; p < 4; p++) rows += `<div class="opt-row opt-player"><input class="o-name" data-p="${p}" maxlength="12" placeholder="Joueur ${p + 1}" value="${OPT.players[p].name || ''}"><small>${TEAM[team(p)]}</small>${sel(p)}${chk(p)}</div>`;
     const v = await modal(`<h3>Options</h3>${rows}
         <p style="font-size:12px;color:#666;margin:4px 0">Humain / ordinateur : appliqué à la prochaine donne. Plusieurs humains = jeu à plusieurs sur le même appareil.</p>
         <div class="opt-row"><label><input type="checkbox" id="o-mast" ${OPT.markMasters ? 'checked' : ''}> Marquer mes cartes maîtresses (★)</label></div>
@@ -1829,6 +1985,7 @@ async function showOptions() {
     if (v !== 'save') return;
     const box = $('box2');   // la fenêtre est cachée mais son contenu est encore là
     const players = [0, 1, 2, 3].map(p => ({
+        name: cleanName(box.querySelector(`.o-name[data-p="${p}"]`).value),
         human: box.querySelector(`.o-type[data-p="${p}"]`).value === 'h',
         visible: box.querySelector(`.o-vis[data-p="${p}"]`).checked,
     }));
@@ -1855,7 +2012,7 @@ $('btn-quit-start').addEventListener('click', () => quitGame(false));
 $('btn-reopen').addEventListener('click', () => location.reload());
 
 // Accès pour les tests automatiques
-window.belote = { G, askCoincheAction, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT,
+window.belote = { scoresText, scoresFileName, G, askCoincheAction, legalCards, explainIllegal, aiCard, aiBid, scoreHand, trickWinner, isMaster, height, points, makeDeck, violations: [], opt: () => OPT,
                   findAnnonces, cmpAnnonce, resolveAnnonces, scoreCoinche, handTotal, VARIANTS, annonceSummary };
 
 // ---------------- Écran de départ ----------------
@@ -1901,6 +2058,7 @@ function showStart() {
     let goal = goals[game];
     const rules = Object.assign({}, DEFAULT_RULES, OPT.rules || {});
     let draw = OPT.solDraw === 3 ? 3 : 1;
+    let winnable = OPT.solWinnable !== false;
     const solSv = loadJSON('solitaire_game', null);
     const resume = $('btn-resume');
     const beloteResume = sv && Array.isArray(sv.scores) && (sv.scores[0] || sv.scores[1] || sv.level > 1)
@@ -1914,12 +2072,16 @@ function showStart() {
         st.querySelectorAll('[data-ann]').forEach(b => b.classList.toggle('sel', (b.dataset.ann === '1') === rules.annonces));
         $('ann-vals').innerHTML = annHTML(rules, game, true);
         const so = game === 'solitaire';
-        $('ann-block').hidden = so; $('goals-block').style.display = so ? 'none' : ''; $('sol-block').hidden = !so;
+        $('ann-block').hidden = so; $('names-block').hidden = so; $('goals-block').style.display = so ? 'none' : ''; $('sol-block').hidden = !so;
         st.querySelectorAll('[data-draw]').forEach(b => b.classList.toggle('sel', +b.dataset.draw === draw));
+        st.querySelectorAll('[data-winnable]').forEach(b => b.classList.toggle('sel', (b.dataset.winnable === '1') === winnable));
         const ss = solStats()[draw];
         $('sol-vals').innerHTML = (draw === 1 ? 'On retourne les cartes de la pioche une par une : la réussite sort plus souvent.'
             : 'On retourne 3 cartes à la fois et seule celle du dessus se joue : plus difficile.') +
-            ' Passages dans la pioche illimités.' + (ss.played ? `<br><b>Tes parties</b> : ${ss.won} gagnée${ss.won > 1 ? 's' : ''} sur ${ss.played}${ss.best ? ' · meilleur temps ' + fmtTime(ss.best) : ''}` : '');
+            ' Passages dans la pioche illimités.' +
+            (winnable ? '<br>Chaque donne est vérifiée avant d\'être distribuée : il existe toujours une façon de la gagner.'
+                      : '<br>Donnes au hasard : certaines ne peuvent pas se gagner (le jeu te prévient dès qu\'il s\'en rend compte).') +
+            (ss.played ? `<br><b>Tes parties</b> : ${ss.won} gagnée${ss.won > 1 ? 's' : ''} sur ${ss.played}${ss.best ? ' · meilleur temps ' + fmtTime(ss.best) : ''}` : '');
         // bouton « Reprendre » : la partie de belote ou la réussite en cours
         if (so) {
             resume.hidden = !(solSv && solSv.started && !solSv.won);
@@ -1935,6 +2097,16 @@ function showStart() {
     st.querySelectorAll('[data-ann]').forEach(b => b.addEventListener('click', () => { rules.annonces = b.dataset.ann === '1'; refresh(); }));
     $('ann-vals').addEventListener('change', e => { if (e.target.id === 'ann-contrat') rules.annoncesContrat = e.target.checked; });
     st.querySelectorAll('[data-draw]').forEach(b => b.addEventListener('click', () => { draw = +b.dataset.draw; refresh(); }));
+    // noms des joueurs : enregistrés dès qu'on les tape
+    st.querySelectorAll('[data-name]').forEach(inp => {
+        inp.value = pname0(+inp.dataset.name);
+        inp.addEventListener('input', () => {
+            const players = OPT.players.map((pl, i) => (i === +inp.dataset.name ? Object.assign({}, pl, { name: cleanName(inp.value) }) : pl));
+            OPT = Object.assign({}, OPT, { players });
+            saveJSON('belote_options', OPT);
+        });
+    });
+    st.querySelectorAll('[data-winnable]').forEach(b => b.addEventListener('click', () => { winnable = b.dataset.winnable === '1'; refresh(); }));
     resume.addEventListener('click', () => {
         st.hidden = true;
         if (game === 'solitaire') { OPT = Object.assign({}, OPT, { game }); saveJSON('belote_options', OPT); solStart({ resume: true }); }
@@ -1942,7 +2114,7 @@ function showStart() {
     });
     $('btn-start').addEventListener('click', () => {
         if (game === 'solitaire') {
-            OPT = Object.assign({}, OPT, { game, solDraw: draw });
+            OPT = Object.assign({}, OPT, { game, solDraw: draw, solWinnable: winnable });
             saveJSON('belote_options', OPT);
             st.hidden = true;
             solStart({ draw });
@@ -2156,7 +2328,7 @@ function solBuild() {
     }
 }
 function solRender() {
-    if (!SOL.active) return;
+    if (!SOL.active || SOL.dealing) return;
     solLayout();
     const pos = (el, x, y, z) => { el.style.left = x + 'px'; el.style.top = y + 'px'; if (z !== undefined) el.style.zIndex = z; };
     pos(SOL.slots.stock, L.x(0), L.yTop);
@@ -2543,16 +2715,47 @@ function solStart(opts) {
                              elapsed: sv.elapsed || 0, started: sv.started, won: sv.won, initial: sv.initial, undo: [] });
     } else {
         SOL.draw = opts.draw === 3 ? 3 : 1;
-        solNewDeal(opts.seed);
-        solSave();
+        if (!solTimer) solTimer = setInterval(solTick, 1000);
+        solFreshDeal(opts.seed, 'Touche une carte pour la jouer, ou fais-la glisser. Touche la pioche (en haut à gauche) pour retourner des cartes.');
+        return;
     }
     solBuild();
     $('sol-board').classList.add('noanim');
     solRender();
     requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
-    solMsg(sv ? 'Réussite reprise.' : 'Touche une carte pour la jouer, ou fais-la glisser. Touche la pioche (en haut à gauche) pour retourner des cartes.');
+    solMsg('Réussite reprise.');
     if (!solTimer) solTimer = setInterval(solTick, 1000);
     solCheck();
+}
+
+// Nouvelle donne : vérifiée gagnable (option) ou au hasard
+async function solFreshDeal(seed, intro) {
+    const want = OPT.solWinnable !== false && seed === undefined && !(TEST && !TEST.solCheck);
+    let ok = false;
+    if (want) ok = await solDealWinnable();
+    else solNewDeal(seed);
+    if (!SOL.active || HALTED) return;
+    solBuild(); $('sol-board').classList.add('noanim'); solRender();
+    requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
+    solSave();
+    solMsg((ok ? 'Donne gagnable : à toi de trouver le chemin ! ' : '') + intro);
+    if (!ok) solCheck();
+}
+async function solDealWinnable() {
+    const gen = ++SOLV.gen;                       // annule une vérification en cours
+    SOL.busy = SOL.dealing = true;
+    $('sol-lost').hidden = true; $('sol-finish').hidden = true;
+    solMsg('Je mélange une donne gagnable…');
+    let found = false;
+    for (let n = 0; n < 40 && !found; n++) {
+        solNewDeal();
+        const job = SV.create(svFromGame(), SOL.draw, 60000);
+        const r = await solRunJob(job, gen, 1500);
+        if (r === null) break;                     // abandon (on a quitté)
+        if (r === 'win') { found = true; Object.assign(SOLV, { status: 'win', path: job.path, back: null }); }
+    }
+    SOL.busy = SOL.dealing = false;
+    return found;
 }
 function solTick() {
     if (!SOL.active || SOL.won || !SOL.started || document.hidden || HALTED) return;
@@ -2562,12 +2765,8 @@ function solTick() {
     if (++solTicks % 5 === 0) solSave();
 }
 function solStartNew() {
-    solNewDeal();
-    solBuild(); $('sol-board').classList.add('noanim'); solRender();
-    requestAnimationFrame(() => requestAnimationFrame(() => $('sol-board').classList.remove('noanim')));
-    solSave();
-    solMsg('Nouvelle donne : bonne réussite !');
-    solCheck();
+    if (SOL.dealing) return;
+    solFreshDeal(undefined, 'Bonne réussite !');
 }
 function solReplay() {
     solRestore(SOL.initial);
@@ -2654,7 +2853,8 @@ function solRulesHTML() {
         <li><b>Toucher</b> une carte la joue à la meilleure place (fondation d'abord) ; on peut aussi la <b>faire glisser</b>.</li>
         <li>↶ annule le dernier coup. Quand tout est découvert, « Terminer » range les cartes tout seul.</li>
         <li>Après chaque coup, le jeu <b>vérifie en arrière-plan</b> s'il reste une façon de gagner (en connaissant les cartes cachées). Si ce n'est plus le cas, il te le dit et te propose de revenir au dernier moment où c'était encore gagnable.</li>
-        <li>💡 montre un coup qui mène à la victoire quand le calcul en a trouvé une ; sinon, un coup possible.</li></ul>`;
+        <li>💡 montre un coup qui mène à la victoire quand le calcul en a trouvé une ; sinon, un coup possible.</li>
+        <li>Option « Toujours gagnables » (écran de départ) : chaque donne est vérifiée avant d'être distribuée.</li></ul>`;
 }
 
 $('sol-board').addEventListener('pointerdown', solPointerDown);
@@ -2670,7 +2870,7 @@ $('sol-back').addEventListener('click', solGoBack);
 $('sol-new2').addEventListener('click', solStartNew);
 window.addEventListener('resize', () => { if (SOL.active) solRender(); });
 document.addEventListener('visibilitychange', () => { if (SOL.active) solSave(); });
-window.solitaire = { SOLV, solCheck, SV, svFromGame, svToGame, SOL, canFound, canTab, solMove, solDraw, solUndo, solAutoDest, solHintMove, solLocate, solNewDeal, solRender, solFinish, solCanFinish, solCards, solStats };
+window.solitaire = { solStartNew, SOLV, solCheck, SV, svFromGame, svToGame, SOL, canFound, canTab, solMove, solDraw, solUndo, solAutoDest, solHintMove, solLocate, solNewDeal, solRender, solFinish, solCanFinish, solCards, solStats };
 
 if (TEST && !TEST.showStart && TEST.game === 'solitaire') {
     solStart({ draw: TEST.draw || 1, seed: TEST.seed });
